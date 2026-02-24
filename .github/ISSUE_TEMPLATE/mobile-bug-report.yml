@@ -10,7 +10,7 @@ body:
 
       **For server or web dashboard bugs**, please use the **Tracearr Bug Report** template instead.
 
-      **Before submitting:** Search [existing issues](https://github.com/connorgallopo/tracearr/issues) first.
+      **Before submitting:** Search [existing issues](https://github.com/jimski427/tracearr/issues) first.
 
 - type: dropdown
   id: platform

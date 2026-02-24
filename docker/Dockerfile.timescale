@@ -28,9 +28,9 @@ RUN echo "shared_preload_libraries = 'timescaledb'" >> /usr/share/postgresql/pos
     && echo "max_locks_per_transaction = 4096" >> /usr/share/postgresql/postgresql.conf.sample
 
 # OCI image labels for container registries and tools like Renovate
-LABEL org.opencontainers.image.source="https://github.com/connorgallopo/Tracearr" \
-      org.opencontainers.image.url="https://github.com/connorgallopo/Tracearr" \
+LABEL org.opencontainers.image.source="https://github.com/jimski427/Tracearr" \
+      org.opencontainers.image.url="https://github.com/jimski427/Tracearr" \
       org.opencontainers.image.title="Tracearr TimescaleDB" \
       org.opencontainers.image.description="TimescaleDB with Toolkit extension for Tracearr" \
-      org.opencontainers.image.vendor="connorgallopo" \
+      org.opencontainers.image.vendor="jimski427" \
       org.opencontainers.image.licenses="AGPL-3.0"

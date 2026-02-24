@@ -67,7 +67,7 @@ export function UpdateDialog({ open, onOpenChange, version }: UpdateDialogProps)
       tag = latest.isPrerelease ? 'next' : 'latest';
     }
 
-    return `docker pull ghcr.io/connorgallopo/tracearr:${tag}`;
+    return `docker pull ghcr.io/jimski427/tracearr:${tag}`;
   }, [current.tag, latest]);
 
   if (!latest || !updateType) return null;

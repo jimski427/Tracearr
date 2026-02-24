@@ -17,10 +17,10 @@ It's not just another stats dashboard. Tracearr is built specifically to detect 
 The new `supervised` image bundles everything you need — TimescaleDB, Redis, and Tracearr — in a single container. No external database setup required. Secrets are auto-generated on first run.
 
 ```bash
-docker pull ghcr.io/connorgallopo/tracearr:supervised
+docker pull ghcr.io/jimski427/tracearr:supervised
 ```
 
-Available on [Unraid Community Apps](https://github.com/connorgallopo/tracearr-unraid-template) too.
+Available on [Unraid Community Apps](https://github.com/jimski427/tracearr-unraid-template) too.
 
 ### Mobile App
 
@@ -124,9 +124,9 @@ Filter stats and activity by custom date ranges. Pick any start and end date, no
 
 ## Links
 
-- [Documentation](https://github.com/connorgallopo/Tracearr#readme)
+- [Documentation](https://github.com/jimski427/Tracearr#readme)
 - [Discord](https://discord.gg/a7n3sFd2Yw)
-- [Report Issues](https://github.com/connorgallopo/Tracearr/issues)
+- [Report Issues](https://github.com/jimski427/Tracearr/issues)
 - Mobile apps coming to App Store and Play Store
 
 ---

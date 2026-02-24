@@ -10,7 +10,7 @@ Deploy Tracearr using Docker Compose. For full documentation, visit [docs.tracea
 
 ```bash
 # 1. Download compose file
-curl -O https://raw.githubusercontent.com/connorgallopo/Tracearr/main/docker/examples/docker-compose.pg18.yml
+curl -O https://raw.githubusercontent.com/jimski427/Tracearr/main/docker/examples/docker-compose.pg18.yml
 
 # 2. Generate secrets
 echo "JWT_SECRET=$(openssl rand -hex 32)" > .env
