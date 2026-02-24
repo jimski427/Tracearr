@@ -461,7 +461,7 @@ export type UserAttributeField = 'user_id' | 'trust_score' | 'account_age_days';
 
 export type DeviceClientField = 'device_type' | 'client_name' | 'platform';
 
-export type NetworkLocationField = 'is_local_network' | 'country' | 'ip_in_range';
+export type NetworkLocationField = 'is_local_network' | 'country' | 'ip_in_range' | 'geo_region';
 
 export type ScopeField = 'server_id' | 'library_id' | 'media_type';
 
