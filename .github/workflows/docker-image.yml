@@ -40,8 +40,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
+      # Standard build metadata (without 'supervised' tag)
+      - name: Extract metadata (standard)
+        id: meta-standard
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -51,36 +52,56 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
+
+      # Supervised build metadata (with 'supervised' tag)
+      - name: Extract metadata (supervised)
+        id: meta-supervised
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch,suffix=-supervised
+            type=semver,pattern={{version}}-supervised
             type=raw,value=supervised
 
-      - name: Build and push Docker image
-        id: push
+      # Build standard image
+      - name: Build and push Docker image (standard)
+        id: push-standard
         uses: docker/build-push-action@v5
         with:
           context: .
           file: docker/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-standard.outputs.tags }}
+          labels: ${{ steps.meta-standard.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          
-      - name: Build and push Docker image
-        id: push
+
+      # Build supervised image
+      - name: Build and push Docker image (supervised)
+        id: push-supervised
         uses: docker/build-push-action@v5
         with:
           context: .
           file: docker/Dockerfile.supervised
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-supervised.outputs.tags }}
+          labels: ${{ steps.meta-supervised.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Generate artifact attestation
+      - name: Generate artifact attestation (standard)
         if: github.event_name != 'pull_request'
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-digest: ${{ steps.push-standard.outputs.digest }}
+          push-to-registry: true
+
+      - name: Generate artifact attestation (supervised)
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push-supervised.outputs.digest }}
           push-to-registry: true
