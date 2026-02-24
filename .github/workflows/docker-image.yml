@@ -40,7 +40,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Standard build metadata (without 'supervised' tag)
+      # Standard build metadata
       - name: Extract metadata (standard)
         id: meta-standard
         uses: docker/metadata-action@v5
@@ -53,7 +53,7 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
-      # Supervised build metadata (with 'supervised' tag)
+      # Supervised build metadata
       - name: Extract metadata (supervised)
         id: meta-supervised
         uses: docker/metadata-action@v5
