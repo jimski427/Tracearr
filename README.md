@@ -7,11 +7,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/connorgallopo/Tracearr/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/connorgallopo/Tracearr/ci.yml?branch=main&style=flat-square&label=CI" alt="CI Status" /></a>
-  <a href="https://github.com/connorgallopo/Tracearr/actions/workflows/nightly.yml"><img src="https://img.shields.io/github/actions/workflow/status/connorgallopo/Tracearr/nightly.yml?style=flat-square&label=Nightly" alt="Nightly Build" /></a>
-  <a href="https://github.com/connorgallopo/Tracearr/releases"><img src="https://img.shields.io/github/v/release/connorgallopo/Tracearr?style=flat-square&color=18D1E7" alt="Latest Release" /></a>
-  <a href="https://ghcr.io/connorgallopo/tracearr"><img src="https://img.shields.io/badge/ghcr.io-tracearr-blue?style=flat-square&logo=docker&logoColor=white" alt="Docker" /></a>
-  <a href="https://github.com/connorgallopo/Tracearr/blob/main/LICENSE"><img src="https://img.shields.io/github/license/connorgallopo/Tracearr?style=flat-square" alt="License" /></a>
+  <a href="https://github.com/jimski427/Tracearr/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/jimski427/Tracearr/ci.yml?branch=main&style=flat-square&label=CI" alt="CI Status" /></a>
+  <a href="https://github.com/jimski427/Tracearr/actions/workflows/nightly.yml"><img src="https://img.shields.io/github/actions/workflow/status/jimski427/Tracearr/nightly.yml?style=flat-square&label=Nightly" alt="Nightly Build" /></a>
+  <a href="https://github.com/jimski427/Tracearr/releases"><img src="https://img.shields.io/github/v/release/jimski427/Tracearr?style=flat-square&color=18D1E7" alt="Latest Release" /></a>
+  <a href="https://ghcr.io/jimski427/tracearr"><img src="https://img.shields.io/badge/ghcr.io-tracearr-blue?style=flat-square&logo=docker&logoColor=white" alt="Docker" /></a>
+  <a href="https://github.com/jimski427/Tracearr/blob/main/LICENSE"><img src="https://img.shields.io/github/license/jimski427/Tracearr?style=flat-square" alt="License" /></a>
   <a href="https://discord.gg/a7n3sFd2Yw"><img src="https://img.shields.io/discord/1444393247978946684?style=flat-square&logo=discord&logoColor=white&label=Discord&color=5865F2" alt="Discord" /></a>
   <a href="https://docs.tracearr.com"><img src="https://img.shields.io/badge/docs-tracearr.com-18D1E7?style=flat-square" alt="Documentation" /></a>
   <a href="https://ko-fi.com/E1E21QRI1L"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Ko-Fi" /></a>
@@ -89,7 +89,7 @@ Tracearr handles all three. One install, one interface.
 
 ```bash
 # Download compose file
-curl -O https://raw.githubusercontent.com/connorgallopo/Tracearr/main/docker/examples/docker-compose.pg18.yml
+curl -O https://raw.githubusercontent.com/jimski427/Tracearr/main/docker/examples/docker-compose.pg18.yml
 
 # Generate secrets
 echo "JWT_SECRET=$(openssl rand -hex 32)" > .env
@@ -118,13 +118,13 @@ For Portainer deployment, alternative configurations, or detailed requirements, 
 
 ```bash
 # All-in-one (easiest)
-docker pull ghcr.io/connorgallopo/tracearr:supervised
+docker pull ghcr.io/jimski427/tracearr:supervised
 
 # Stable (requires external services)
-docker pull ghcr.io/connorgallopo/tracearr:latest
+docker pull ghcr.io/jimski427/tracearr:latest
 
 # Living on the edge
-docker pull ghcr.io/connorgallopo/tracearr:nightly
+docker pull ghcr.io/jimski427/tracearr:nightly
 ```
 
 ### Viewing Logs
@@ -216,7 +216,7 @@ Got questions? Found a bug? Want to contribute?
 
 [![Discord](https://img.shields.io/badge/Discord-Join%20the%20server-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/a7n3sFd2Yw)
 
-Or [open an issue](https://github.com/connorgallopo/Tracearr/issues) on GitHub.
+Or [open an issue](https://github.com/jimski427/Tracearr/issues) on GitHub.
 
 ## Contributing
 
@@ -228,7 +228,7 @@ Contributions welcome. Please:
 4. Run tests and linting (`pnpm test && pnpm lint`)
 5. Open a PR
 
-Check the [issues](https://github.com/connorgallopo/Tracearr/issues) for things to work on.
+Check the [issues](https://github.com/jimski427/Tracearr/issues) for things to work on.
 
 ### Development with VS Code
 
@@ -282,11 +282,11 @@ Run `pnpm dev` in a terminal to start both apps, then use the "Debug All" config
 </p>
 
 <p align="center">
-  <a href="https://www.star-history.com/#connorgallopo/Tracearr&type=date&legend=top-left">
+  <a href="https://www.star-history.com/#jimski427/Tracearr&type=date&legend=top-left">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=connorgallopo/Tracearr&type=date&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=connorgallopo/Tracearr&type=date&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=connorgallopo/Tracearr&type=date&legend=top-left" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=jimski427/Tracearr&type=date&theme=dark&legend=top-left" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=jimski427/Tracearr&type=date&legend=top-left" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=jimski427/Tracearr&type=date&legend=top-left" />
   </picture>
   </a>
 </p>

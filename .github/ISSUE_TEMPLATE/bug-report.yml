@@ -10,7 +10,7 @@ body:
 
       **For mobile app bugs**, please use the **Mobile App Bug** template instead.
 
-      **Before submitting:** Search [existing issues](https://github.com/connorgallopo/tracearr/issues) first.
+      **Before submitting:** Search [existing issues](https://github.com/jimski427/tracearr/issues) first.
 
 - type: input
   id: version

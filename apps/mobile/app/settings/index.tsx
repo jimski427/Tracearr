@@ -25,8 +25,8 @@ import { colors } from '@/lib/theme';
 const DISCORD_URL = 'https://discord.gg/a7n3sFd2Yw';
 const DOCS_URL = 'https://docs.tracearr.com/';
 const WEBSITE_URL = 'https://tracearr.com';
-const GITHUB_URL = 'https://github.com/connorgallopo/Tracearr';
-const SPONSOR_URL = 'https://github.com/sponsors/connorgallopo';
+const GITHUB_URL = 'https://github.com/jimski427/Tracearr';
+const SPONSOR_URL = 'https://github.com/sponsors/jimski427';
 
 function SettingsSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (

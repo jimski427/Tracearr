@@ -592,7 +592,7 @@ Most endpoints support \`serverId\` to filter by media server.
       `.trim(),
       contact: {
         name: 'Tracearr',
-        url: 'https://github.com/connorgallopo/Tracearr',
+        url: 'https://github.com/jimski427/Tracearr',
       },
     },
   });

@@ -174,8 +174,8 @@ const externalLinks = [
   { name: 'Discord', href: 'https://discord.gg/a7n3sFd2Yw', icon: DiscordIcon },
   { name: 'Docs', href: 'https://docs.tracearr.com/', icon: BookOpen },
   { name: 'Website', href: 'https://tracearr.com', icon: Globe },
-  { name: 'GitHub', href: 'https://github.com/connorgallopo/Tracearr', icon: GithubIcon },
-  { name: 'Sponsor', href: 'https://github.com/sponsors/connorgallopo', icon: Heart },
+  { name: 'GitHub', href: 'https://github.com/jimski427/Tracearr', icon: GithubIcon },
+  { name: 'Sponsor', href: 'https://github.com/sponsors/jimski427', icon: Heart },
 ];
 
 function ExternalLinks() {

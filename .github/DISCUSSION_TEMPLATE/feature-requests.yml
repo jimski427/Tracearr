@@ -5,7 +5,7 @@ body:
       value: |
         Thanks for suggesting a feature! Please keep it to one idea per request.
 
-        **Before submitting:** Search [existing requests](https://github.com/connorgallopo/Tracearr/discussions/categories/feature-requests) to avoid duplicates.
+        **Before submitting:** Search [existing requests](https://github.com/jimski427/Tracearr/discussions/categories/feature-requests) to avoid duplicates.
 
   - type: textarea
     id: feature
