@@ -234,7 +234,7 @@ function getDynamicOptions(
         label: c.name,
         group: c.hasSessions ? 'Recently Seen' : 'All Countries',
       }));
-    case 'geo_region':  // Add this
+    case 'geo_region':
       return filterOptions.regions?.map((r) => ({
         value: r.code,
         label: r.name,
