@@ -1130,6 +1130,7 @@ export const sessionRoutes: FastifyPluginAsync = async (app) => {
         cities: citiesResult.rows as unknown as HistoryFilterOptions['cities'],
         users: usersData,
         servers: serversData,
+        regions: regionsWithSessions,
       };
 
       return rulesResponse;
@@ -1144,6 +1145,7 @@ export const sessionRoutes: FastifyPluginAsync = async (app) => {
       cities: citiesResult.rows as unknown as HistoryFilterOptions['cities'],
       users: usersData,
       servers: serversData,
+      regions: regionsWithSessions,
     };
 
     return response;
