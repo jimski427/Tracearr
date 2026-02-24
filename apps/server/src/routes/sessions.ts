@@ -997,6 +997,7 @@ export const sessionRoutes: FastifyPluginAsync = async (app) => {
       productsResult,
       devicesResult,
       countriesResult,
+      regionsResult,
       citiesResult,
       usersResult,
       serversResult,
@@ -1034,6 +1035,15 @@ export const sessionRoutes: FastifyPluginAsync = async (app) => {
             FROM sessions s
             ${buildWhereWithCondition(sql`geo_country IS NOT NULL`)}
             GROUP BY geo_country
+            ORDER BY count DESC
+            LIMIT 250
+          `),
+      // Regions (codes with session count)
+      db.execute(sql`
+            SELECT geo_region as value, COUNT(DISTINCT COALESCE(reference_id, id))::int as count
+            FROM sessions s
+            ${buildWhereWithCondition(sql`geo_region IS NOT NULL`)}
+            GROUP BY geo_region
             ORDER BY count DESC
             LIMIT 250
           `),
