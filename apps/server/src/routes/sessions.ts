@@ -1103,6 +1103,14 @@ export const sessionRoutes: FastifyPluginAsync = async (app) => {
     const countriesWithSessions = new Set(
       (countriesResult.rows as { value: string }[]).map((r) => r.value)
     );
+    // Get regions that have sessions
+    const regionsWithSessions = (regionsResult.rows as { value: string; count: number }[])
+        .map((row) => ({
+          code: row.value,
+          name: row.value,
+          hasSessions: true,
+        }))
+        .filter((r) => r.code);
 
     // When includeAllCountries is true, return all countries with hasSessions indicator
     if (includeAllCountries) {
@@ -1145,7 +1153,6 @@ export const sessionRoutes: FastifyPluginAsync = async (app) => {
       cities: citiesResult.rows as unknown as HistoryFilterOptions['cities'],
       users: usersData,
       servers: serversData,
-      regions: regionsWithSessions,
     };
 
     return response;
