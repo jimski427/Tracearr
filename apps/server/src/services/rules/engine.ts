@@ -427,4 +427,4 @@ geo_region: (context: EvaluationContext, condition: Condition): EvaluatorResult 
   }
   
   return { actual: region, matched: false };
-},
+}
