@@ -363,7 +363,7 @@ export const userAttributeFieldSchema = z.enum(['user_id', 'trust_score', 'accou
 
 export const deviceClientFieldSchema = z.enum(['device_type', 'client_name', 'platform']);
 
-export const networkLocationFieldSchema = z.enum(['is_local_network', 'country', 'ip_in_range', 'geo_region']);(['is_local_network', 'country', 'ip_in_range']);
+export const networkLocationFieldSchema = z.enum(['is_local_network', 'country', 'ip_in_range']);
 
 export const scopeFieldSchema = z.enum(['server_id', 'library_id', 'media_type']);
 
