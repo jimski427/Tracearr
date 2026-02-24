@@ -51,6 +51,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=supervised
 
       - name: Build and push Docker image
         id: push
