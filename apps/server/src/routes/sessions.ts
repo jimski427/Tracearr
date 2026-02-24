@@ -949,6 +949,7 @@ export const sessionRoutes: FastifyPluginAsync = async (app) => {
             products: [],
             devices: [],
             countries: [],
+            regions: [],  // Add this line
             cities: [],
             users: [],
             servers: [],
