@@ -1201,9 +1201,16 @@ describe('Plex Auth Routes', () => {
         vi.mocked(getUserById).mockResolvedValue(existingOwner);
 
         // Mock the update calls
+        vi.mocked(db.update).mockReset();
         vi.mocked(db.update).mockReturnValue({
           set: vi.fn().mockReturnThis(),
-          where: vi.fn().mockResolvedValue(undefined),
+          where: vi.fn().mockImplementation(() => {
+            const result = Promise.resolve(undefined);
+            (result as unknown as Record<string, unknown>).returning = vi
+              .fn()
+              .mockResolvedValue([]);
+            return result;
+          }),
         } as never);
 
         const response = await app.inject({
