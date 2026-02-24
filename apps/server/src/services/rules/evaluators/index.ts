@@ -776,8 +776,8 @@ const evaluateIpInRange: ConditionEvaluator = (
   return { matched: false, actual: ip };
 };
 function evaluateGeoRegion(context: EvaluationContext, condition: Condition): EvaluatorResult {
-  const { snapshot } = context;
-  const region = snapshot.geoRegion ?? null;
+  const { session } = context;
+  const region = session.geoRegion ?? null;
   
   if (condition.operator === 'in') {
     const values = Array.isArray(condition.value) ? condition.value : [condition.value];
