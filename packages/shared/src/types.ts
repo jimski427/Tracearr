@@ -1163,6 +1163,8 @@ export interface HistoryFilterOptions {
 export interface RulesFilterOptions extends Omit<HistoryFilterOptions, 'countries'> {
   /** All countries with session activity indicator */
   countries: CountryOption[];
+  /** All regions/states with session activity indicator */
+  regions: CountryOption[];
   /** Available servers */
   servers: ServerFilterOption[];
 }
