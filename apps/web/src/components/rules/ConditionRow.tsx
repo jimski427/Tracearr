@@ -234,6 +234,12 @@ function getDynamicOptions(
         label: c.name,
         group: c.hasSessions ? 'Recently Seen' : 'All Countries',
       }));
+    case 'geo_region':  // Add this
+      return filterOptions.regions?.map((r) => ({
+        value: r.code,
+        label: r.name,
+        group: r.hasSessions ? 'Recently Seen' : 'All Regions',
+      }));
     case 'server_id':
       return filterOptions.servers?.map((s) => ({
         value: s.id,
