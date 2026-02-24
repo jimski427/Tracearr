@@ -775,7 +775,36 @@ const evaluateIpInRange: ConditionEvaluator = (
 
   return { matched: false, actual: ip };
 };
-
+function evaluateGeoRegion(context: EvaluationContext, condition: Condition): EvaluatorResult {
+  const { snapshot } = context;
+  const region = snapshot.geoRegion ?? null;
+  
+  if (condition.operator === 'in') {
+    const values = Array.isArray(condition.value) ? condition.value : [condition.value];
+    return {
+      actual: region,
+      matched: region !== null && values.includes(region),
+    };
+  } else if (condition.operator === 'not_in') {
+    const values = Array.isArray(condition.value) ? condition.value : [condition.value];
+    return {
+      actual: region,
+      matched: region === null || !values.includes(region),
+    };
+  } else if (condition.operator === 'eq') {
+    return {
+      actual: region,
+      matched: region === condition.value,
+    };
+  } else if (condition.operator === 'neq') {
+    return {
+      actual: region,
+      matched: region !== condition.value,
+    };
+  }
+  
+  return { actual: region, matched: false };
+}
 // ============================================================================
 // Scope Evaluators
 // ============================================================================
@@ -851,6 +880,7 @@ export const evaluatorRegistry: Record<ConditionField, ConditionEvaluator> = {
   // Network/location
   is_local_network: evaluateIsLocalNetwork,
   country: evaluateCountry,
+  geo_region: evaluateGeoRegion,
   ip_in_range: evaluateIpInRange,
 
   // Scope
