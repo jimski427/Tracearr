@@ -28,6 +28,7 @@ const CONDITION_FIELD_LABELS: Record<ConditionField, string> = {
   platform: 'Platform',
   is_local_network: 'Local Network',
   country: 'Country',
+  geo_region: 'State/Region', 
   ip_in_range: 'IP Range',
   server_id: 'Server',
   library_id: 'Library',
