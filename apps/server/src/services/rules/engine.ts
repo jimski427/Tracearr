@@ -397,34 +397,3 @@ export async function evaluateRulesAsync(
 
   return results;
 }
-// Add this to evaluatorRegistry:
-geo_region: (context: EvaluationContext, condition: Condition): EvaluatorResult => {
-  const { snapshot } = context;
-  const region = snapshot.geoRegion ?? null;
-  
-  if (condition.operator === 'in') {
-    const values = Array.isArray(condition.value) ? condition.value : [condition.value];
-    return {
-      actual: region,
-      matched: region !== null && values.includes(region),
-    };
-  } else if (condition.operator === 'not_in') {
-    const values = Array.isArray(condition.value) ? condition.value : [condition.value];
-    return {
-      actual: region,
-      matched: region === null || !values.includes(region),
-    };
-  } else if (condition.operator === 'eq') {
-    return {
-      actual: region,
-      matched: region === condition.value,
-    };
-  } else if (condition.operator === 'neq') {
-    return {
-      actual: region,
-      matched: region !== condition.value,
-    };
-  }
-  
-  return { actual: region, matched: false };
-}
