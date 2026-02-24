@@ -324,6 +324,15 @@ export const FIELD_DEFINITIONS: Record<ConditionField, FieldDefinition> = {
     valueType: 'multi-select',
     placeholder: 'Select countries...',
   },
+  geo_region: {
+    field: 'geo_region',
+    label: 'State/Region',
+    description: 'Geographic state or province',
+    category: 'network_location',
+    operators: [...EQUALITY_OPERATORS, ...ARRAY_OPERATORS],
+    valueType: 'multi-select',
+    placeholder: 'Select states/regions...',
+},
   ip_in_range: {
     field: 'ip_in_range',
     label: 'IP Range',
