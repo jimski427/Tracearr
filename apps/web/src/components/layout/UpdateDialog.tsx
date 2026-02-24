@@ -56,8 +56,8 @@ export function UpdateDialog({ open, onOpenChange, version }: UpdateDialogProps)
   const dockerCommand = useMemo(() => {
     if (!latest) return '';
 
-    // Check if user is running supervised image (tag starts with "supervised-")
-    const isSupervised = current.tag?.startsWith('supervised-') ?? false;
+    // Check if user is running supervised image (plain "supervised" tag or starts with "supervised-")
+    const isSupervised = current.tag === 'supervised' || (current.tag?.startsWith('supervised-') ?? false);
 
     // Determine the appropriate tag based on image type and release channel
     let tag: string;
