@@ -38,6 +38,9 @@
     "reset-password": "pnpm --filter @tracearr/server reset-password"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "@eslint/js": "^9.39.2",
     "@types/node": "^24.10.9",
     "@types/react": "19.2.13",
@@ -51,6 +54,7 @@
     "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
+    "semantic-release": "^24.2.5",
     "shadcn": "^3.7.0",
     "turbo": "^2.7.5",
     "typescript": "^5.7.0",
