@@ -666,6 +666,28 @@ describe('CacheService', () => {
       const ids = await redis.smembers('tracearr:sessions:active:ids');
       expect(ids).toContain('session-1');
     });
+
+    it('should re-add session ID to SET if it was evicted (ensures visibility in Now Playing)', async () => {
+      const session = createTestActiveSession('session-1');
+      await cache.addActiveSession(session);
+
+      // Simulate the session ID being evicted from the SET (e.g. TTL expiry or stale cleanup)
+      await redis.srem('tracearr:sessions:active:ids', 'session-1');
+      const idsBeforeUpdate = await redis.smembers('tracearr:sessions:active:ids');
+      expect(idsBeforeUpdate).not.toContain('session-1');
+
+      // updateActiveSession should re-add the ID to the SET
+      const updatedSession = { ...session, progressMs: 75000 };
+      await cache.updateActiveSession(updatedSession);
+
+      // Verify the session ID is back in the SET
+      const idsAfterUpdate = await redis.smembers('tracearr:sessions:active:ids');
+      expect(idsAfterUpdate).toContain('session-1');
+
+      // Verify data was also updated
+      const storedData = redis.store.get('tracearr:sessions:session-1');
+      expect(JSON.parse(storedData!).progressMs).toBe(75000);
+    });
   });
 
   describe('syncActiveSessions (full replacement)', () => {

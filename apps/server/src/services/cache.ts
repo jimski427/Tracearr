@@ -215,6 +215,8 @@ export function createCacheService(redis: Redis): CacheService {
 
     async updateActiveSession(session: ActiveSession): Promise<void> {
       const pipeline = redis.multi();
+      // Ensure session ID is in the active sessions SET (idempotent - sadd is a no-op if already present)
+      pipeline.sadd(REDIS_KEYS.ACTIVE_SESSION_IDS, session.id);
       pipeline.setex(
         REDIS_KEYS.SESSION_BY_ID(session.id),
         CACHE_TTL.ACTIVE_SESSIONS,
