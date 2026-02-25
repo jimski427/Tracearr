@@ -25,8 +25,9 @@ export function useActiveSessions(serverIds: string[]) {
   return useQuery({
     queryKey: ['sessions', 'active', serverIdsKey],
     queryFn: () => api.sessions.getActive(serverIds.length ? serverIds : undefined),
-    staleTime: 1000 * 15, // 15 seconds
+    staleTime: 0,
     refetchInterval: 1000 * 30, // 30 seconds
+    refetchOnWindowFocus: true,
   });
 }
 
