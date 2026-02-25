@@ -386,7 +386,7 @@ jobs:
       - name: Bump version and push tag
         uses: mathieudutour/github-tag-action@v6.2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GH_PAT }}
           # Reads conventional commit prefixes to determine version bump:
           # fix: → patch (e.g. v1.0.1)
           # feat: → minor (e.g. v1.1.0)
