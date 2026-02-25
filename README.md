@@ -1,3 +1,5 @@
+This repo is a fork to add state to the rule filter. I used copilot to assist with the code and push some changes. I checked the changes, but i would recommend going to the main repo. 
+
 <p align="center">
   <img src="apps/web/public/images/og_image.png" alt="Tracearr" width="600" />
 </p>
