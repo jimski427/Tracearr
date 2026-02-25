@@ -676,6 +676,9 @@ async function fetchFullSession(
   serverId: string,
   sessionKey: string
 ): Promise<FetchSessionResult | null> {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 500;
+
   try {
     const serverRows = await db.select().from(servers).where(eq(servers.id, serverId)).limit(1);
 
@@ -690,17 +693,27 @@ async function fetchFullSession(
       token: server.token,
     });
 
-    const allSessions = await client.getSessions();
-    const targetSession = allSessions.find((s) => s.sessionKey === sessionKey);
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      const allSessions = await client.getSessions();
+      const targetSession = allSessions.find((s) => s.sessionKey === sessionKey);
 
-    if (!targetSession) {
-      return null;
+      if (targetSession) {
+        return {
+          session: mapMediaSession(targetSession, server.type as 'plex'),
+          server,
+        };
+      }
+
+      if (attempt < MAX_RETRIES) {
+        console.log(
+          `[SSEProcessor] Session ${sessionKey} not found in Plex sessions (attempt ${attempt}/${MAX_RETRIES}), retrying in ${RETRY_DELAY_MS}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      }
     }
 
-    return {
-      session: mapMediaSession(targetSession, server.type as 'plex'),
-      server,
-    };
+    console.log(`[SSEProcessor] Session ${sessionKey} not found after ${MAX_RETRIES} attempts`);
+    return null;
   } catch (error) {
     console.error(`[SSEProcessor] Error fetching session ${sessionKey}:`, error);
     return null;
