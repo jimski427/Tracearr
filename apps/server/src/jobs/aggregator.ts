@@ -31,6 +31,8 @@ const defaultConfig: AggregatorConfig = {
  */
 async function refreshStats(): Promise<void> {
   try {
+    console.log('Refreshing dashboard statistics...');
+
     // 1. Query active stream count from cache
     let activeStreams = 0;
     const cacheService = getCacheService();
@@ -79,8 +81,6 @@ async function refreshStats(): Promise<void> {
     if (pubSubService) {
       await pubSubService.publish(WS_EVENTS.STATS_UPDATED, stats);
     }
-
-    console.log('Refreshing dashboard statistics...');
   } catch (error) {
     console.error('Stats aggregation error:', error);
   }
