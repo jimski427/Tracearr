@@ -49,12 +49,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js 24
-RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
-    && apt-get install -y nodejs \
-    && corepack enable \
-    && corepack prepare pnpm@10.24.0 --activate \
-    && rm -rf /var/lib/apt/lists/*
+# Install Node.js 24 (copied from builder stage to avoid nodesource dependency)
+COPY --from=builder /usr/local/bin/node /usr/local/bin/
+COPY --from=builder /usr/local/bin/npm /usr/local/bin/
+COPY --from=builder /usr/local/bin/npx /usr/local/bin/
+COPY --from=builder /usr/local/bin/corepack /usr/local/bin/
+COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules/
+RUN corepack enable && corepack prepare pnpm@10.28.1 --activate
 
 # Install PostgreSQL 15 + TimescaleDB
 RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg \
