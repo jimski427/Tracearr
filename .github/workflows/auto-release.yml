@@ -1,3 +1,5 @@
+name: Auto Release
+
 on:
   push:
     branches:
@@ -13,7 +15,12 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v3
+      # GH_PAT must be a Personal Access Token with 'contents: write' scope.
+      # It is required so that the tag push triggers downstream workflows
+      # (GITHUB_TOKEN-created tags do not trigger other workflows).
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GH_PAT }}
 
       - name: Extract version from package.json
         id: version
@@ -31,17 +38,22 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create Release
+      - name: Create and push tag
         if: steps.check_tag.outputs.exists == 'false'
-        uses: actions/create-release@v1
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag v${{ steps.version.outputs.version }}
+          git push origin v${{ steps.version.outputs.version }}
+
+      - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.version.outputs.version }}
-          release_name: Release v${{ steps.version.outputs.version }}
-          body: |
-            ## Release v${{ steps.version.outputs.version }}
-            
-            Docker image: `ghcr.io/jimski427/tracearr:v${{ steps.version.outputs.version }}`
-          draft: false
-          prerelease: false
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          gh release create v${{ steps.version.outputs.version }} \
+            --title "Release v${{ steps.version.outputs.version }}" \
+            --notes "## Release v${{ steps.version.outputs.version }}
+
+          Docker image: \`ghcr.io/jimski427/tracearr:v${{ steps.version.outputs.version }}\`" \
+            --latest
