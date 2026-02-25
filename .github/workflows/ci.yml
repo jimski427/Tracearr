@@ -365,3 +365,30 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  tag-release:
+    name: Tag Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Only run on push to main (not on pull requests)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Wait for build (which already waits for lint + all tests) to pass
+    needs: [build]
+    permissions:
+      contents: write  # Required to create tags
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed for changelog/tag generation
+
+      - name: Bump version and push tag
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Reads conventional commit prefixes to determine version bump:
+          # fix: → patch (e.g. v1.0.1)
+          # feat: → minor (e.g. v1.1.0)
+          # feat!: or BREAKING CHANGE → major (e.g. v2.0.0)
+          # anything else (chore:, docs:, etc.) → patch
