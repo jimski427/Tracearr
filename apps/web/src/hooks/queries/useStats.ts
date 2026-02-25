@@ -12,7 +12,7 @@ export function useDashboardStats(serverIds: string[]) {
   return useQuery({
     queryKey: ['stats', 'dashboard', serverIdsKey, timezone],
     queryFn: () => api.stats.dashboard(serverIds.length ? serverIds : undefined),
-    staleTime: 1000 * 30, // 30 seconds
+    staleTime: 0,
     refetchInterval: 1000 * 60, // 1 minute
   });
 }
