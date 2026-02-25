@@ -36,6 +36,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get version from git tags
+        id: version
+        run: |
+          git fetch --tags
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
       # Standard build metadata
       - name: Extract metadata (standard)
         id: meta-standard
@@ -72,6 +79,11 @@ jobs:
           labels: ${{ steps.meta-standard.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.version }}
+            APP_TAG=${{ steps.version.outputs.version }}
+            APP_COMMIT=${{ github.sha }}
+            APP_BUILD_DATE=${{ github.event.workflow_run.head_commit.timestamp }}
 
       # Build supervised image
       - name: Build and push Docker image (supervised)
@@ -85,6 +97,11 @@ jobs:
           labels: ${{ steps.meta-supervised.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.version }}
+            APP_TAG=supervised-${{ steps.version.outputs.version }}
+            APP_COMMIT=${{ github.sha }}
+            APP_BUILD_DATE=${{ github.event.workflow_run.head_commit.timestamp }}
 
       - name: Generate artifact attestation (standard)
         if: github.event_name != 'pull_request'
