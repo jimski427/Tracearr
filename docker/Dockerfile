@@ -45,7 +45,12 @@ RUN apk add --no-cache tailscale
 
 WORKDIR /app
 
-RUN echo "Building version: ${APP_VERSION} (${APP_COMMIT})"
+ARG CACHE_BUST
+# Write build info to JSON file - can't be overridden by compose ENV vars
+
+RUN echo "Build: ${APP_VERSION} (${APP_COMMIT}) - ${CACHE_BUST:-nocache}" && \
+    printf '{"version":"%s","tag":"%s","commit":"%s","buildDate":"%s"}\n' \
+      "${APP_VERSION}" "${APP_TAG}" "${APP_COMMIT}" "${APP_BUILD_DATE}" > /app/.build-info.json
 
 # Set runtime environment variables
 ENV NODE_ENV=production
