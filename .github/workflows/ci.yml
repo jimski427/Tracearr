@@ -132,7 +132,7 @@ jobs:
           --health-retries 10
 
       redis:
-        image: redis:7-alpine
+        image: redis:8-alpine
         ports:
           - 6380:6379
         options: >-
@@ -261,7 +261,7 @@ jobs:
           --health-retries 10
 
       redis:
-        image: redis:7-alpine
+        image: redis:8-alpine
         ports:
           - 6380:6379
         options: >-
@@ -379,7 +379,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Full history needed for changelog/tag generation
 
