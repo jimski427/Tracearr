@@ -19,6 +19,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/server/package.json ./apps/server/
 COPY apps/web/package.json ./apps/web/
 COPY apps/mobile/package.json ./apps/mobile/
+COPY apps/e2e/package.json ./apps/e2e/
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/translations/package.json ./packages/translations/
 COPY packages/test-utils/package.json ./packages/test-utils/
@@ -53,7 +54,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
     && apt-get install -y nodejs \
     && corepack enable \
-    && corepack prepare pnpm@10.24.0 --activate \
+    && corepack prepare pnpm@10.28.1 --activate \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PostgreSQL 15 + TimescaleDB
