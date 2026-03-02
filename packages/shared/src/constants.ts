@@ -221,7 +221,7 @@ export const REDIS_KEYS = {
 // Cache TTLs in seconds
 export const CACHE_TTL = {
   DASHBOARD_STATS: 60,
-  ACTIVE_SESSIONS: 300,
+  ACTIVE_SESSIONS: 30, // 30 seconds - lowered from 300
   USER_SESSIONS: 3600,
   RATE_LIMIT: 900,
   SERVER_HEALTH: 600, // 10 minutes - servers marked unhealthy if no update

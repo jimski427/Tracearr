@@ -7,46 +7,46 @@
  * - Lifecycle management: start, stop, trigger
  */
 
-import { eq, and, isNull, lte, gte, inArray } from 'drizzle-orm';
 import {
   POLLING_INTERVALS,
   SESSION_LIMITS,
   type ActiveSession,
-  type SessionState,
   type RuleV2,
   type Session,
+  type SessionState,
 } from '@tracearr/shared';
-import { registerService, unregisterService } from '../../services/serviceTracker.js';
-import { isMaintenance } from '../../serverState.js';
+import { and, eq, gte, inArray, isNull, lte } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import { servers, serverUsers, sessions, users } from '../../db/schema.js';
-import { createMediaServerClient } from '../../services/mediaServer/index.js';
-import { type GeoLocation } from '../../services/geoip.js';
-import { lookupGeoIP } from '../../services/plexGeoip.js';
-import type { CacheService, PubSubService } from '../../services/cache.js';
 import { getGeoIPSettings } from '../../routes/settings.js';
+import { isMaintenance } from '../../serverState.js';
+import type { CacheService, PubSubService } from '../../services/cache.js';
+import { type GeoLocation } from '../../services/geoip.js';
+import { createMediaServerClient } from '../../services/mediaServer/index.js';
+import { lookupGeoIP } from '../../services/plexGeoip.js';
+import { registerService, unregisterService } from '../../services/serviceTracker.js';
 import { sseManager } from '../../services/sseManager.js';
 
-import type { PollerConfig, ServerWithToken, ServerProcessingResult } from './types.js';
-import { mapMediaSession, pickStreamDetailFields } from './sessionMapper.js';
+import { enqueueNotification } from '../notificationQueue.js';
 import { batchGetRecentUserSessions, getActiveRulesV2 } from './database.js';
+import {
+  buildActiveSession,
+  createSessionWithRulesAtomic,
+  findActiveSession,
+  handleMediaChangeAtomic,
+  processPollResults,
+  reEvaluateRulesOnTranscodeChange,
+  stopSessionAtomic,
+} from './sessionLifecycle.js';
+import { mapMediaSession, pickStreamDetailFields } from './sessionMapper.js';
 import {
   calculatePauseAccumulation,
   checkWatchCompletion,
-  shouldForceStopStaleSession,
   detectMediaChange,
+  shouldForceStopStaleSession,
 } from './stateTracker.js';
+import type { PollerConfig, ServerProcessingResult, ServerWithToken } from './types.js';
 import { broadcastViolations } from './violations.js';
-import {
-  createSessionWithRulesAtomic,
-  stopSessionAtomic,
-  findActiveSession,
-  buildActiveSession,
-  processPollResults,
-  handleMediaChangeAtomic,
-  reEvaluateRulesOnTranscodeChange,
-} from './sessionLifecycle.js';
-import { enqueueNotification } from '../notificationQueue.js';
 
 // ============================================================================
 // Module State
@@ -830,6 +830,10 @@ async function processServerSessions(
 
           if (wasUpdated) {
             stoppedSessionKeys.push(cachedKey);
+          }
+          if (cacheService) {
+            await cacheService.removeActiveSession(stoppedSession.id);
+            await cacheService.removeUserSession(stoppedSession.serverUserId, stoppedSession.id);
           }
         }
       }

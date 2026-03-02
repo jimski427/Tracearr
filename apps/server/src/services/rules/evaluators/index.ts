@@ -1,15 +1,15 @@
 import type {
   Condition,
   ConditionField,
-  VideoResolution,
   DeviceType,
   Platform,
   TranscodingConditionValue,
+  VideoResolution,
 } from '@tracearr/shared';
-import type { ConditionEvaluator, EvaluationContext, EvaluatorResult } from '../types.js';
-import { compare } from '../comparisons.js';
-import { geoipService } from '../../geoip.js';
 import { normalizeResolution } from '../../../utils/resolutionNormalizer.js';
+import { geoipService } from '../../geoip.js';
+import { compare } from '../comparisons.js';
+import type { ConditionEvaluator, EvaluationContext, EvaluatorResult } from '../types.js';
 
 // ============================================================================
 // Helper Functions
@@ -167,31 +167,33 @@ const evaluateConcurrentStreams: ConditionEvaluator = (
   const excludeSameDevice = condition.params?.exclude_same_device ?? true;
   const excludeSameIp = condition.params?.exclude_same_ip ?? false;
 
-  // Count active sessions for this user (excluding current session by reference to avoid double-count)
-  let userActiveSessions = activeSessions.filter(
-    (s) => s.serverUserId === serverUser.id && s !== session
-  );
+  // Count active sessions for this user (INCLUDING current session)
+  let userActiveSessions = activeSessions.filter((s) => s.serverUserId === serverUser.id);
 
-  // When exclude_same_device is true, don't count sessions from the same device.
-  // A single physical device can only play one stream - duplicates are stale data.
+  // When exclude_same_device is true, don't count OTHER sessions from the same device.
+  // Keep the triggering session, but remove duplicates from same device.
   if (excludeSameDevice) {
     userActiveSessions = userActiveSessions.filter(
-      (s) => !(session.deviceId && s.deviceId && session.deviceId === s.deviceId)
+      (s) =>
+        s.id === session.id || !(session.deviceId && s.deviceId && session.deviceId === s.deviceId)
     );
   }
 
-  // When exclude_same_ip is true, only count sessions from different IPs.
+  // When exclude_same_ip is true, only count triggering session + sessions from different IPs.
   if (excludeSameIp) {
-    userActiveSessions = userActiveSessions.filter((s) => s.ipAddress !== session.ipAddress);
+    userActiveSessions = userActiveSessions.filter(
+      (s) => s.id === session.id || s.ipAddress !== session.ipAddress
+    );
   }
 
-  // Add 1 for the current session
-  const count = userActiveSessions.length + 1;
+  const count = userActiveSessions.length;
+
+  const relatedSessionIds = userActiveSessions.filter((s) => s.id !== session.id).map((s) => s.id);
 
   return {
     matched: compare(count, condition.operator, condition.value),
     actual: count,
-    relatedSessionIds: userActiveSessions.map((s) => s.id),
+    relatedSessionIds,
   };
 };
 
@@ -869,7 +871,7 @@ export const evaluatorRegistry: Record<ConditionField, ConditionEvaluator> = {
 export {
   calculateDistanceKm,
   getResolution,
-  resolutionToNumber,
   normalizeDeviceType,
   normalizePlatform,
+  resolutionToNumber,
 };

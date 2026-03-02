@@ -5,45 +5,44 @@
  * Used by both the Poller and SSE processor to ensure consistent handling.
  */
 
-import { eq, and, desc, isNull, gte } from 'drizzle-orm';
 import {
-  TIME_MS,
   SESSION_WRITE_RETRY,
+  TIME_MS,
   type ActiveSession,
-  type StreamDetailFields,
   type RuleV2,
-  type Session,
   type Server,
   type ServerUser,
+  type Session,
+  type StreamDetailFields,
 } from '@tracearr/shared';
-import { pickStreamDetailFields } from './sessionMapper.js';
+import { and, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import { serverUsers, sessions, violations } from '../../db/schema.js';
 import type { GeoLocation } from '../../services/geoip.js';
 import { evaluateRulesAsync, hasTranscodeConditions } from '../../services/rules/engine.js';
 import { executeActions, type ActionResult } from '../../services/rules/executors/index.js';
 import { resolveTargetSessions } from '../../services/rules/executors/targeting.js';
-import { storeActionResults } from '../../services/rules/v2Integration.js';
 import type { EvaluationContext, EvaluationResult } from '../../services/rules/types.js';
+import { storeActionResults } from '../../services/rules/v2Integration.js';
+import { pickStreamDetailFields } from './sessionMapper.js';
 import {
   calculateStopDuration,
   checkWatchCompletion,
   shouldRecordSession,
 } from './stateTracker.js';
-import { sql } from 'drizzle-orm';
-import type { ViolationInsertResult } from './violations.js';
 import type {
-  SessionCreationInput,
-  SessionCreationResult,
-  QualityChangeResult,
-  SessionStopInput,
-  SessionStopResult,
   MediaChangeInput,
   MediaChangeResult,
-  TranscodeReEvalInput,
   PendingSessionData,
+  QualityChangeResult,
+  SessionCreationInput,
+  SessionCreationResult,
   SessionIdentity,
+  SessionStopInput,
+  SessionStopResult,
+  TranscodeReEvalInput,
 } from './types.js';
+import type { ViolationInsertResult } from './violations.js';
 
 // ============================================================================
 // Serialization Retry Logic
@@ -720,11 +719,15 @@ export async function createSessionWithRulesAtomic(
             identityName: serverUser.identityName,
           };
 
+          const activeSessionsWithNew = activeSessions.some((s) => s.id === session.id)
+            ? activeSessions
+            : [...activeSessions, session];
+
           const baseContext: Omit<EvaluationContext, 'rule'> = {
             session,
             serverUser: serverUserObj,
             server: serverObj,
-            activeSessions,
+            activeSessions: activeSessionsWithNew,
             recentSessions,
           };
 
