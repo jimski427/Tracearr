@@ -22,7 +22,7 @@ import type { CacheService, PubSubService } from '../services/cache.js';
 import { registerService, unregisterService } from '../services/serviceTracker.js';
 import { lookupGeoIP } from '../services/plexGeoip.js';
 import { getGeoIPSettings } from '../routes/settings.js';
-import { mapMediaSession } from './poller/sessionMapper.js';
+import { mapMediaSession, pickStreamDetailFields } from './poller/sessionMapper.js';
 import { extractLiveUuid } from '../services/mediaServer/plex/plexUtils.js';
 import {
   calculatePauseAccumulation,
@@ -440,8 +440,6 @@ async function handleProgress(event: {
       return;
     }
 
-    // Calculate current watch time for completion check (not playback position)
-    // Some servers report incorrect position (e.g., Emby iOS transcoded sessions)
     const now = new Date();
     let watched = existingSession.watched;
     if (!watched && existingSession.totalDurationMs) {
@@ -452,7 +450,11 @@ async function handleProgress(event: {
         ? now.getTime() - existingSession.lastPausedAt.getTime()
         : 0;
       const currentWatchTimeMs = Math.max(0, elapsedMs - pausedMs - ongoingPauseMs);
-      watched = checkWatchCompletion(currentWatchTimeMs, existingSession.totalDurationMs);
+      watched = checkWatchCompletion(
+        currentWatchTimeMs,
+        notification.viewOffset,
+        existingSession.totalDurationMs
+      );
     }
 
     await db
@@ -995,8 +997,6 @@ async function updateExistingSession(
     now
   );
 
-  // Check watch completion using actual watch time (not playback position)
-  // Some servers report incorrect position (e.g., Emby iOS transcoded sessions)
   let watched = existingSession.watched;
   if (!watched && processed.totalDurationMs) {
     const elapsedMs = now.getTime() - existingSession.startedAt.getTime();
@@ -1008,7 +1008,11 @@ async function updateExistingSession(
       0,
       elapsedMs - pauseResult.pausedDurationMs - ongoingPauseMs
     );
-    watched = checkWatchCompletion(currentWatchTimeMs, processed.totalDurationMs);
+    watched = checkWatchCompletion(
+      currentWatchTimeMs,
+      processed.progressMs,
+      processed.totalDurationMs
+    );
   }
 
   // Check if transcode state changed before updating
@@ -1016,24 +1020,28 @@ async function updateExistingSession(
     existingSession.videoDecision !== processed.videoDecision ||
     existingSession.audioDecision !== processed.audioDecision;
 
+  // Build update payload
+  const updatePayload: Partial<typeof sessions.$inferInsert> = {
+    state: newState,
+    quality: processed.quality,
+    bitrate: processed.bitrate,
+    progressMs: processed.progressMs || null,
+    lastSeenAt: now, // Update for stale session detection
+    lastPausedAt: pauseResult.lastPausedAt,
+    pausedDurationMs: pauseResult.pausedDurationMs,
+    watched,
+    isTranscode: processed.isTranscode,
+    videoDecision: processed.videoDecision,
+    audioDecision: processed.audioDecision,
+  };
+
+  // Update stream details when valid (skip if API returned incomplete data)
+  if (processed.sourceAudioCodec || processed.sourceVideoCodec) {
+    Object.assign(updatePayload, pickStreamDetailFields(processed));
+  }
+
   // Update session in database
-  await db
-    .update(sessions)
-    .set({
-      state: newState,
-      quality: processed.quality,
-      bitrate: processed.bitrate,
-      progressMs: processed.progressMs || null,
-      lastSeenAt: now, // Update for stale session detection
-      lastPausedAt: pauseResult.lastPausedAt,
-      pausedDurationMs: pauseResult.pausedDurationMs,
-      watched,
-      // Transcode fields - can change mid-session (e.g., bandwidth drop)
-      isTranscode: processed.isTranscode,
-      videoDecision: processed.videoDecision,
-      audioDecision: processed.audioDecision,
-    })
-    .where(eq(sessions.id, existingSession.id));
+  await db.update(sessions).set(updatePayload).where(eq(sessions.id, existingSession.id));
 
   // Re-evaluate transcode-related V2 rules when transcode state changes.
   // At session creation (especially via SSE), transcode state may not be known yet,
@@ -1116,6 +1124,21 @@ async function updateExistingSession(
       cached.isTranscode = processed.isTranscode;
       cached.videoDecision = processed.videoDecision;
       cached.audioDecision = processed.audioDecision;
+
+      // Update stream details in cache when valid
+      if (processed.sourceAudioCodec || processed.sourceVideoCodec) {
+        cached.sourceVideoCodec = processed.sourceVideoCodec ?? null;
+        cached.sourceAudioCodec = processed.sourceAudioCodec ?? null;
+        cached.sourceAudioChannels = processed.sourceAudioChannels ?? null;
+        cached.sourceVideoDetails = processed.sourceVideoDetails ?? null;
+        cached.sourceAudioDetails = processed.sourceAudioDetails ?? null;
+        cached.streamVideoCodec = processed.streamVideoCodec ?? null;
+        cached.streamAudioCodec = processed.streamAudioCodec ?? null;
+        cached.streamVideoDetails = processed.streamVideoDetails ?? null;
+        cached.streamAudioDetails = processed.streamAudioDetails ?? null;
+        cached.transcodeInfo = processed.transcodeInfo ?? null;
+        cached.subtitleInfo = processed.subtitleInfo ?? null;
+      }
 
       await cacheService.updateActiveSession(cached);
 
