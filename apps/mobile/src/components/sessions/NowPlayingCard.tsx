@@ -8,7 +8,7 @@
  * - Device icon
  * - Location footer
  */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Image, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/text';
@@ -203,6 +203,34 @@ export function NowPlayingCard({ session, onPress }: NowPlayingCardProps) {
   });
 
   const isPaused = session.state === 'paused';
+
+  // Live ticking paused duration
+  const [totalPausedMs, setTotalPausedMs] = useState<number>(() => {
+    if (isPaused && session.lastPausedAt) {
+      return session.pausedDurationMs + (Date.now() - new Date(session.lastPausedAt).getTime());
+    }
+    return session.pausedDurationMs;
+  });
+
+  useEffect(() => {
+    if (!isPaused) {
+      setTotalPausedMs(session.pausedDurationMs);
+      return;
+    }
+    const tick = () => {
+      if (session.lastPausedAt) {
+        setTotalPausedMs(
+          session.pausedDurationMs + (Date.now() - new Date(session.lastPausedAt).getTime())
+        );
+      } else {
+        setTotalPausedMs(session.pausedDurationMs);
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [isPaused, session.lastPausedAt, session.pausedDurationMs]);
+
   const username = session.user?.username ?? 'Unknown';
   const displayName = session.user?.identityName ?? username;
   const userThumbUrl = session.user?.thumbUrl || null;
@@ -333,7 +361,7 @@ export function NowPlayingCard({ session, onPress }: NowPlayingCardProps) {
               </View>
               <Text className={`text-muted-foreground text-xs ${isPaused ? 'text-warning' : ''}`}>
                 {isPaused
-                  ? 'Paused'
+                  ? `Paused · ${formatDuration(totalPausedMs, { style: 'compact' })}`
                   : `${formatDuration(estimatedProgressMs, { style: 'clock' })} / ${formatDuration(session.totalDurationMs, { style: 'clock' })}`}
               </Text>
             </View>

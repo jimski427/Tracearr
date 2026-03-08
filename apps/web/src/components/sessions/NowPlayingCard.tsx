@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Monitor,
   MonitorPlay,
@@ -91,6 +91,33 @@ export function NowPlayingCard({
   const avatarUrl = getAvatarUrl(session.serverId, session.user.thumbUrl, 28) ?? undefined;
 
   const isPaused = session.state === 'paused';
+
+  // Live ticking paused duration
+  const [totalPausedMs, setTotalPausedMs] = useState<number>(() => {
+    if (isPaused && session.lastPausedAt) {
+      return session.pausedDurationMs + (Date.now() - new Date(session.lastPausedAt).getTime());
+    }
+    return session.pausedDurationMs;
+  });
+
+  useEffect(() => {
+    if (!isPaused) {
+      setTotalPausedMs(session.pausedDurationMs);
+      return;
+    }
+    const tick = () => {
+      if (session.lastPausedAt) {
+        setTotalPausedMs(
+          session.pausedDurationMs + (Date.now() - new Date(session.lastPausedAt).getTime())
+        );
+      } else {
+        setTotalPausedMs(session.pausedDurationMs);
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [isPaused, session.lastPausedAt, session.pausedDurationMs]);
 
   return (
     <div
@@ -229,7 +256,9 @@ export function NowPlayingCard({
               <span>{formatDuration(estimatedProgressMs)}</span>
               <span>
                 {isPaused ? (
-                  <span className="font-medium text-yellow-500">Paused</span>
+                  <span className="font-medium text-yellow-500">
+                    Paused · {formatDuration(totalPausedMs, { style: 'compact' })}
+                  </span>
                 ) : remaining ? (
                   `-${formatDuration(remaining)}`
                 ) : (
