@@ -425,6 +425,28 @@ const evaluateInactiveDays: ConditionEvaluator = (
   };
 };
 
+const evaluatePausedDurationMinutes: ConditionEvaluator = (
+  context: EvaluationContext,
+  condition: Condition
+): EvaluatorResult => {
+  const { session } = context;
+
+  let pausedMinutes = 0;
+  if (session.state === 'paused' && session.lastPausedAt) {
+    const pausedMs = Date.now() - new Date(session.lastPausedAt).getTime();
+    pausedMinutes = Math.floor(pausedMs / (1000 * 60));
+  }
+
+  return {
+    matched: compare(pausedMinutes, condition.operator, condition.value),
+    actual: pausedMinutes,
+    details: {
+      state: session.state,
+      lastPausedAt: session.lastPausedAt,
+    },
+  };
+};
+
 // ============================================================================
 // Stream Quality Evaluators
 // ============================================================================
@@ -867,6 +889,7 @@ export const evaluatorRegistry: Record<ConditionField, ConditionEvaluator> = {
   unique_ips_in_window: evaluateUniqueIpsInWindow,
   unique_devices_in_window: evaluateUniqueDevicesInWindow,
   inactive_days: evaluateInactiveDays,
+  paused_duration_minutes: evaluatePausedDurationMinutes,
 
   // Stream quality
   source_resolution: evaluateSourceResolution,
