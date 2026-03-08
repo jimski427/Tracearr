@@ -1877,6 +1877,7 @@ describe('Evaluator Registry', () => {
       'unique_ips_in_window',
       'unique_devices_in_window',
       'inactive_days',
+      'paused_duration_minutes',
       'source_resolution',
       'output_resolution',
       'is_transcoding',
@@ -1900,5 +1901,36 @@ describe('Evaluator Registry', () => {
       expect(evaluatorRegistry).toHaveProperty(field);
       expect(typeof evaluatorRegistry[field as keyof typeof evaluatorRegistry]).toBe('function');
     }
+  });
+});
+
+describe('paused_duration_minutes evaluator', () => {
+  it('returns 0 when session is playing', () => {
+    const session = createMockSession({ state: 'playing', lastPausedAt: null });
+    const ctx = createTestContext({ session });
+    const evaluator = evaluatorRegistry.paused_duration_minutes;
+    const result = evaluator(ctx, createCondition({ field: 'paused_duration_minutes', operator: 'eq', value: 0 }));
+    expect(matched(result)).toBe(true);
+  });
+
+  it('returns 0 when state is paused but lastPausedAt is null', () => {
+    const session = createMockSession({ state: 'paused', lastPausedAt: null });
+    const ctx = createTestContext({ session });
+    const evaluator = evaluatorRegistry.paused_duration_minutes;
+    const result = evaluator(ctx, createCondition({ field: 'paused_duration_minutes', operator: 'eq', value: 0 }));
+    expect(matched(result)).toBe(true);
+  });
+
+  it('returns paused minutes when session is paused with lastPausedAt set', () => {
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    const session = createMockSession({ state: 'paused', lastPausedAt: tenMinutesAgo });
+    const ctx = createTestContext({ session });
+    const evaluator = evaluatorRegistry.paused_duration_minutes;
+
+    const gtResult = evaluator(ctx, createCondition({ field: 'paused_duration_minutes', operator: 'gte', value: 9 }));
+    expect(matched(gtResult)).toBe(true);
+
+    const ltResult = evaluator(ctx, createCondition({ field: 'paused_duration_minutes', operator: 'gt', value: 15 }));
+    expect(matched(ltResult)).toBe(false);
   });
 });
