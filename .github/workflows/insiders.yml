@@ -3,6 +3,10 @@ name: Insiders
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: 'Version tag (e.g. v1.2.3)'
+        required: true
+        type: string
       branch:
         description: 'Branch to build from'
         required: true
@@ -245,7 +249,7 @@ jobs:
           cache-from: type=gha,scope=insiders-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=insiders-${{ matrix.arch }}
           build-args: |
-            APP_VERSION=insiders
+            APP_VERSION=${{ inputs.version }}
             APP_TAG=insiders
             APP_COMMIT=${{ github.sha }}
             APP_BUILD_DATE=${{ github.event.head_commit.timestamp }}
@@ -376,7 +380,7 @@ jobs:
           cache-from: type=gha,scope=insiders-supervised-${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=insiders-supervised-${{ matrix.arch }}
           build-args: |
-            APP_VERSION=insiders
+            APP_VERSION=${{ inputs.version }}
             APP_TAG=supervised-insiders
             APP_COMMIT=${{ github.sha }}
             APP_BUILD_DATE=${{ github.event.head_commit.timestamp }}
