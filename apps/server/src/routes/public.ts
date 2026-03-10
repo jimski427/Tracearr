@@ -48,6 +48,7 @@ import {
   queryPlatforms,
   queryQualityBreakdown,
 } from './stats/queries.js';
+import { PLAY_COUNT } from '../constants/index.js';
 import { buildPosterUrl, buildAvatarUrl } from '../services/imageProxy.js';
 import { terminateSession } from '../services/termination.js';
 import { getDashboardStats } from '../services/dashboardStats.js';
@@ -277,13 +278,13 @@ export const publicRoutes: FastifyPluginAsync = async (app) => {
       .from(serverUsers)
       .where(serverFilter);
 
-    // Get total sessions (last 30 days)
+    // Get total plays (last 30 days, deduplicated by reference_id)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sessionFilter = serverId
       ? and(eq(sessions.serverId, serverId), gte(sessions.startedAt, thirtyDaysAgo))
       : gte(sessions.startedAt, thirtyDaysAgo);
     const [sessionCountResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: PLAY_COUNT })
       .from(sessions)
       .where(sessionFilter);
 

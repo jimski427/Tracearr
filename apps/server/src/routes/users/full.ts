@@ -17,7 +17,7 @@
 
 import type { FastifyPluginAsync } from 'fastify';
 import { eq, desc, sql } from 'drizzle-orm';
-import { userIdParamSchema, type UserLocation, type UserDevice } from '@tracearr/shared';
+import { userIdParamSchema, type UserLocation } from '@tracearr/shared';
 import { db } from '../../db/client.js';
 import {
   serverUsers,
@@ -29,6 +29,8 @@ import {
   terminationLogs,
 } from '../../db/schema.js';
 import { hasServerAccess } from '../../utils/serverFiltering.js';
+import { PLAY_COUNT } from '../../constants/index.js';
+import { queryUserDevices } from './queries.js';
 
 export const fullRoutes: FastifyPluginAsync = async (app) => {
   /**
@@ -90,10 +92,10 @@ export const fullRoutes: FastifyPluginAsync = async (app) => {
         return { error: 'forbidden' as const };
       }
 
-      // 2. Get session stats (single query)
+      // 2. Get session stats — count unique plays, not raw rows
       const statsResult = await tx
         .select({
-          totalSessions: sql<number>`count(*)::int`,
+          totalSessions: PLAY_COUNT,
           totalWatchTime: sql<number>`coalesce(sum(duration_ms), 0)::bigint`,
         })
         .from(sessions)
@@ -101,213 +103,138 @@ export const fullRoutes: FastifyPluginAsync = async (app) => {
 
       const stats = statsResult[0];
 
-      // 3. Get recent sessions (paginated first page)
-      const recentSessions = await tx
-        .select({
-          id: sessions.id,
-          serverId: sessions.serverId,
-          serverName: servers.name,
-          serverUserId: sessions.serverUserId,
-          sessionKey: sessions.sessionKey,
-          state: sessions.state,
-          mediaType: sessions.mediaType,
-          mediaTitle: sessions.mediaTitle,
-          grandparentTitle: sessions.grandparentTitle,
-          seasonNumber: sessions.seasonNumber,
-          episodeNumber: sessions.episodeNumber,
-          year: sessions.year,
-          thumbPath: sessions.thumbPath,
-          ratingKey: sessions.ratingKey,
-          externalSessionId: sessions.externalSessionId,
-          startedAt: sessions.startedAt,
-          stoppedAt: sessions.stoppedAt,
-          durationMs: sessions.durationMs,
-          totalDurationMs: sessions.totalDurationMs,
-          progressMs: sessions.progressMs,
-          lastPausedAt: sessions.lastPausedAt,
-          pausedDurationMs: sessions.pausedDurationMs,
-          referenceId: sessions.referenceId,
-          watched: sessions.watched,
-          ipAddress: sessions.ipAddress,
-          geoCity: sessions.geoCity,
-          geoRegion: sessions.geoRegion,
-          geoCountry: sessions.geoCountry,
-          geoContinent: sessions.geoContinent,
-          geoPostal: sessions.geoPostal,
-          geoLat: sessions.geoLat,
-          geoLon: sessions.geoLon,
-          geoAsnNumber: sessions.geoAsnNumber,
-          geoAsnOrganization: sessions.geoAsnOrganization,
-          playerName: sessions.playerName,
-          deviceId: sessions.deviceId,
-          product: sessions.product,
-          device: sessions.device,
-          platform: sessions.platform,
-          quality: sessions.quality,
-          isTranscode: sessions.isTranscode,
-          bitrate: sessions.bitrate,
-        })
-        .from(sessions)
-        .innerJoin(servers, eq(sessions.serverId, servers.id))
-        .where(eq(sessions.serverUserId, id))
-        .orderBy(desc(sessions.startedAt))
-        .limit(sessionsLimit);
-
-      // 4. Get locations (aggregated)
-      const locationData = await tx
-        .select({
-          city: sessions.geoCity,
-          region: sessions.geoRegion,
-          country: sessions.geoCountry,
-          lat: sessions.geoLat,
-          lon: sessions.geoLon,
-          sessionCount: sql<number>`count(*)::int`,
-          lastSeenAt: sql<Date>`max(${sessions.startedAt})`,
-          ipAddresses: sql<string[]>`array_agg(distinct ${sessions.ipAddress})`,
-        })
-        .from(sessions)
-        .where(eq(sessions.serverUserId, id))
-        .groupBy(
-          sessions.geoCity,
-          sessions.geoRegion,
-          sessions.geoCountry,
-          sessions.geoLat,
-          sessions.geoLon
+      // 3. Get recent sessions grouped by play (collapse pause/resume chains)
+      const recentSessionsResult = await tx.execute(sql`
+        WITH grouped_sessions AS (
+          SELECT
+            COALESCE(s.reference_id, s.id) AS play_id,
+            MIN(s.started_at) AS started_at,
+            MAX(s.stopped_at) AS stopped_at,
+            SUM(COALESCE(s.duration_ms, 0)) AS duration_ms,
+            SUM(COALESCE(s.paused_duration_ms, 0)) AS paused_duration_ms,
+            MAX(s.progress_ms) AS progress_ms,
+            MAX(s.total_duration_ms) AS total_duration_ms,
+            COUNT(*) AS segment_count,
+            BOOL_OR(s.watched) AS watched,
+            (array_agg(s.id ORDER BY s.started_at))[1] AS first_session_id,
+            (array_agg(s.state ORDER BY s.started_at DESC))[1] AS state
+          FROM sessions s
+          WHERE s.server_user_id = ${id}
+          GROUP BY COALESCE(s.reference_id, s.id)
+          ORDER BY MIN(s.started_at) DESC
+          LIMIT ${sessionsLimit}
         )
-        .orderBy(desc(sql`max(${sessions.startedAt})`));
+        SELECT
+          gs.play_id AS id,
+          gs.started_at, gs.stopped_at, gs.duration_ms, gs.paused_duration_ms,
+          gs.progress_ms, gs.total_duration_ms, gs.segment_count, gs.watched, gs.state,
+          s.server_id, sv.name AS server_name, s.server_user_id, s.session_key,
+          s.media_type, s.media_title, s.grandparent_title, s.season_number,
+          s.episode_number, s.year, s.thumb_path, s.rating_key, s.external_session_id,
+          s.reference_id, s.ip_address, s.geo_city, s.geo_region, s.geo_country,
+          s.geo_continent, s.geo_postal, s.geo_lat, s.geo_lon,
+          s.geo_asn_number, s.geo_asn_organization,
+          s.player_name, s.device_id, s.product, s.device, s.platform,
+          s.quality, s.is_transcode, s.bitrate, s.last_paused_at
+        FROM grouped_sessions gs
+        JOIN sessions s ON s.id = gs.first_session_id
+        JOIN servers sv ON sv.id = s.server_id
+        ORDER BY gs.started_at DESC
+      `);
 
-      const locations: UserLocation[] = locationData.map((loc) => ({
+      const recentSessions = recentSessionsResult.rows.map(
+        (row) => ({
+          id: row.id as string,
+          serverId: row.server_id as string,
+          serverName: row.server_name as string,
+          serverUserId: row.server_user_id as string,
+          sessionKey: row.session_key as string,
+          state: row.state as string,
+          mediaType: row.media_type as string,
+          mediaTitle: row.media_title as string,
+          grandparentTitle: row.grandparent_title as string | null,
+          seasonNumber: row.season_number as number | null,
+          episodeNumber: row.episode_number as number | null,
+          year: row.year as number | null,
+          thumbPath: row.thumb_path as string | null,
+          ratingKey: row.rating_key as string | null,
+          externalSessionId: row.external_session_id as string | null,
+          startedAt: row.started_at as Date,
+          stoppedAt: row.stopped_at as Date | null,
+          durationMs: row.duration_ms != null ? Number(row.duration_ms) : null,
+          totalDurationMs: row.total_duration_ms as number | null,
+          progressMs: row.progress_ms as number | null,
+          lastPausedAt: row.last_paused_at as Date | null,
+          pausedDurationMs: row.paused_duration_ms != null ? Number(row.paused_duration_ms) : null,
+          referenceId: row.reference_id as string | null,
+          watched: row.watched as boolean,
+          segmentCount: Number(row.segment_count),
+          ipAddress: row.ip_address as string | null,
+          geoCity: row.geo_city as string | null,
+          geoRegion: row.geo_region as string | null,
+          geoCountry: row.geo_country as string | null,
+          geoContinent: row.geo_continent as string | null,
+          geoPostal: row.geo_postal as string | null,
+          geoLat: row.geo_lat as number | null,
+          geoLon: row.geo_lon as number | null,
+          geoAsnNumber: row.geo_asn_number as number | null,
+          geoAsnOrganization: row.geo_asn_organization as string | null,
+          playerName: row.player_name as string | null,
+          deviceId: row.device_id as string | null,
+          product: row.product as string | null,
+          device: row.device as string | null,
+          platform: row.platform as string | null,
+          quality: row.quality as string | null,
+          isTranscode: row.is_transcode as boolean | null,
+          bitrate: row.bitrate as number | null,
+        })
+      );
+
+      // 4. Get locations — deduplicate to one row per play, then aggregate by location
+      const locationResult = await tx.execute(sql`
+        WITH plays AS (
+          SELECT DISTINCT ON (COALESCE(reference_id, id))
+            geo_city, geo_region, geo_country, geo_lat, geo_lon,
+            ip_address, started_at
+          FROM sessions
+          WHERE server_user_id = ${id}
+          ORDER BY COALESCE(reference_id, id), started_at DESC
+        )
+        SELECT
+          geo_city AS city, geo_region AS region, geo_country AS country,
+          geo_lat AS lat, geo_lon AS lon,
+          count(*)::int AS session_count,
+          max(started_at) AS last_seen_at,
+          array_agg(DISTINCT ip_address) AS ip_addresses
+        FROM plays
+        GROUP BY geo_city, geo_region, geo_country, geo_lat, geo_lon
+        ORDER BY max(started_at) DESC
+      `);
+
+      const locations: UserLocation[] = (
+        locationResult.rows as {
+          city: string | null;
+          region: string | null;
+          country: string | null;
+          lat: number | null;
+          lon: number | null;
+          session_count: number;
+          last_seen_at: Date;
+          ip_addresses: string[];
+        }[]
+      ).map((loc) => ({
         city: loc.city,
         region: loc.region,
         country: loc.country,
         lat: loc.lat,
         lon: loc.lon,
-        sessionCount: loc.sessionCount,
-        lastSeenAt: loc.lastSeenAt,
-        ipAddresses: loc.ipAddresses ?? [],
+        sessionCount: loc.session_count,
+        lastSeenAt: loc.last_seen_at,
+        ipAddresses: loc.ip_addresses ?? [],
       }));
 
-      // 5. Get devices (fetch sessions for device aggregation)
-      const deviceSessionData = await tx
-        .select({
-          deviceId: sessions.deviceId,
-          playerName: sessions.playerName,
-          product: sessions.product,
-          device: sessions.device,
-          platform: sessions.platform,
-          startedAt: sessions.startedAt,
-          geoCity: sessions.geoCity,
-          geoRegion: sessions.geoRegion,
-          geoCountry: sessions.geoCountry,
-        })
-        .from(sessions)
-        .where(eq(sessions.serverUserId, id))
-        .orderBy(desc(sessions.startedAt));
-
-      // Aggregate devices in memory (same logic as devices.ts)
-      const deviceMap = new Map<
-        string,
-        {
-          deviceId: string | null;
-          playerName: string | null;
-          product: string | null;
-          device: string | null;
-          platform: string | null;
-          sessionCount: number;
-          lastSeenAt: Date;
-          locationMap: Map<
-            string,
-            {
-              city: string | null;
-              region: string | null;
-              country: string | null;
-              sessionCount: number;
-              lastSeenAt: Date;
-            }
-          >;
-        }
-      >();
-
-      for (const session of deviceSessionData) {
-        const key =
-          session.deviceId ??
-          session.playerName ??
-          `${session.product ?? 'unknown'}-${session.device ?? 'unknown'}-${session.platform ?? 'unknown'}`;
-
-        const existing = deviceMap.get(key);
-        if (existing) {
-          existing.sessionCount++;
-          if (session.startedAt > existing.lastSeenAt) {
-            existing.lastSeenAt = session.startedAt;
-            existing.playerName = session.playerName ?? existing.playerName;
-            existing.product = session.product ?? existing.product;
-            existing.device = session.device ?? existing.device;
-            existing.platform = session.platform ?? existing.platform;
-          }
-
-          const locKey = `${session.geoCity ?? ''}-${session.geoRegion ?? ''}-${session.geoCountry ?? ''}`;
-          const existingLoc = existing.locationMap.get(locKey);
-          if (existingLoc) {
-            existingLoc.sessionCount++;
-            if (session.startedAt > existingLoc.lastSeenAt) {
-              existingLoc.lastSeenAt = session.startedAt;
-            }
-          } else {
-            existing.locationMap.set(locKey, {
-              city: session.geoCity,
-              region: session.geoRegion,
-              country: session.geoCountry,
-              sessionCount: 1,
-              lastSeenAt: session.startedAt,
-            });
-          }
-        } else {
-          const locationMap = new Map<
-            string,
-            {
-              city: string | null;
-              region: string | null;
-              country: string | null;
-              sessionCount: number;
-              lastSeenAt: Date;
-            }
-          >();
-          const locKey = `${session.geoCity ?? ''}-${session.geoRegion ?? ''}-${session.geoCountry ?? ''}`;
-          locationMap.set(locKey, {
-            city: session.geoCity,
-            region: session.geoRegion,
-            country: session.geoCountry,
-            sessionCount: 1,
-            lastSeenAt: session.startedAt,
-          });
-
-          deviceMap.set(key, {
-            deviceId: session.deviceId,
-            playerName: session.playerName,
-            product: session.product,
-            device: session.device,
-            platform: session.platform,
-            sessionCount: 1,
-            lastSeenAt: session.startedAt,
-            locationMap,
-          });
-        }
-      }
-
-      const devices: UserDevice[] = Array.from(deviceMap.values())
-        .map((dev) => ({
-          deviceId: dev.deviceId,
-          playerName: dev.playerName,
-          product: dev.product,
-          device: dev.device,
-          platform: dev.platform,
-          sessionCount: dev.sessionCount,
-          lastSeenAt: dev.lastSeenAt,
-          locations: Array.from(dev.locationMap.values()).sort(
-            (a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime()
-          ),
-        }))
-        .sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime());
+      // 5. Get devices (shared query handles dedup and aggregation)
+      const devices = await queryUserDevices(tx, id);
 
       // 6. Get violations (recent, limited)
       const violationData = await tx
