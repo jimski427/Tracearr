@@ -22,6 +22,7 @@ import { db } from '../../db/client.js';
 import { serverUsers, sessions, servers, users } from '../../db/schema.js';
 import { hasServerAccess } from '../../utils/serverFiltering.js';
 import { updateUser } from '../../services/userService.js';
+import { PLAY_COUNT } from '../../constants/index.js';
 
 export const listRoutes: FastifyPluginAsync = async (app) => {
   // Combined schema for pagination and server filter
@@ -162,10 +163,10 @@ export const listRoutes: FastifyPluginAsync = async (app) => {
       return reply.forbidden('You do not have access to this user');
     }
 
-    // Get session stats for this server user
+    // Get session stats for this server user (count unique plays, not raw rows)
     const statsResult = await db
       .select({
-        totalSessions: sql<number>`count(*)::int`,
+        totalSessions: PLAY_COUNT,
         totalWatchTime: sql<number>`coalesce(sum(duration_ms), 0)::bigint`,
       })
       .from(sessions)

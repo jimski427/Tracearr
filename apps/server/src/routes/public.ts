@@ -8,38 +8,50 @@
  * - GET /docs - OpenAPI 3.0 specification (JSON)
  * - GET /health - System health and server connectivity
  * - GET /stats - Dashboard overview statistics
+ * - GET /stats/today - Today's statistics with timezone support
+ * - GET /activity - Playback activity trends and breakdowns
  * - GET /streams - Currently active playback sessions
+ * - POST /streams/:id/terminate - Terminate an active stream
  * - GET /users - User list with activity summary
  * - GET /violations - Violations list with filtering
  * - GET /history - Session history with filtering
  */
 
-import type { FastifyPluginAsync } from 'fastify';
-import { eq, desc, sql, and, gte, isNull, isNotNull } from 'drizzle-orm';
-import { z } from 'zod';
 import {
-  formatBitrate,
   booleanStringSchema,
-  isValidTimezone,
-  getResolutionLabel,
   formatAudioChannels,
+  formatBitrate,
   formatMediaTech,
+  getResolutionLabel,
+  isValidTimezone,
   sessionIdParamSchema,
   terminateSessionBodySchema,
-  type SourceVideoDetails,
   type SourceAudioDetails,
-  type StreamVideoDetails,
+  type SourceVideoDetails,
   type StreamAudioDetails,
-  type TranscodeInfo,
+  type StreamVideoDetails,
   type SubtitleInfo,
+  type TranscodeInfo,
 } from '@tracearr/shared';
+import { and, desc, eq, gte, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import type { FastifyPluginAsync } from 'fastify';
+import { z } from 'zod';
+import { PLAY_COUNT } from '../constants/index.js';
 import { db } from '../db/client.js';
-import { users, serverUsers, servers, sessions, violations, rules } from '../db/schema.js';
+import { rules, serverUsers, servers, sessions, users, violations } from '../db/schema.js';
 import { getCacheService } from '../services/cache.js';
-import { generateOpenAPIDocument } from './public.openapi.js';
-import { buildPosterUrl, buildAvatarUrl } from '../services/imageProxy.js';
-import { terminateSession } from '../services/termination.js';
 import { getDashboardStats } from '../services/dashboardStats.js';
+import { buildAvatarUrl, buildPosterUrl } from '../services/imageProxy.js';
+import { terminateSession } from '../services/termination.js';
+import { generateOpenAPIDocument } from './public.openapi.js';
+import {
+  queryConcurrentStreams,
+  queryPlatforms,
+  queryPlaysByDayOfWeek,
+  queryPlaysByHourOfDay,
+  queryPlaysOverTime,
+  queryQualityBreakdown,
+} from './stats/queries.js';
 
 interface StreamCodecData {
   sourceVideoCodec: string | null;
@@ -266,13 +278,13 @@ export const publicRoutes: FastifyPluginAsync = async (app) => {
       .from(serverUsers)
       .where(serverFilter);
 
-    // Get total sessions (last 30 days)
+    // Get total plays (last 30 days, deduplicated by reference_id)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sessionFilter = serverId
       ? and(eq(sessions.serverId, serverId), gte(sessions.startedAt, thirtyDaysAgo))
       : gte(sessions.startedAt, thirtyDaysAgo);
     const [sessionCountResult] = await db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: PLAY_COUNT })
       .from(sessions)
       .where(sessionFilter);
 
@@ -469,7 +481,7 @@ export const publicRoutes: FastifyPluginAsync = async (app) => {
       .innerJoin(serverUsers, eq(users.id, serverUsers.userId))
       .where(whereClause);
 
-    // Get paginated users with server info joined directly (avoiding N+1)
+    // Get paginated users with server info
     const userRows = await db
       .select({
         id: users.id,
@@ -481,10 +493,10 @@ export const publicRoutes: FastifyPluginAsync = async (app) => {
         createdAt: users.createdAt,
         // Server-specific data
         serverId: serverUsers.serverId,
+        serverUserId: serverUsers.id,
         serverUsername: serverUsers.username,
         thumbUrl: serverUsers.thumbUrl,
         lastActivityAt: serverUsers.lastActivityAt,
-        sessionCount: serverUsers.sessionCount,
         // Server name joined directly
         serverName: servers.name,
       })
@@ -495,6 +507,20 @@ export const publicRoutes: FastifyPluginAsync = async (app) => {
       .orderBy(desc(serverUsers.lastActivityAt))
       .limit(pageSize)
       .offset(offset);
+
+    const serverUserIds = userRows.map((r) => r.serverUserId);
+    const playCounts =
+      serverUserIds.length > 0
+        ? await db
+            .select({
+              serverUserId: sessions.serverUserId,
+              playCount: PLAY_COUNT,
+            })
+            .from(sessions)
+            .where(inArray(sessions.serverUserId, serverUserIds))
+            .groupBy(sessions.serverUserId)
+        : [];
+    const playCountMap = new Map(playCounts.map((r) => [r.serverUserId, r.playCount]));
 
     const userData = userRows.map((row) => ({
       id: row.id,
@@ -508,7 +534,7 @@ export const publicRoutes: FastifyPluginAsync = async (app) => {
       serverId: row.serverId,
       serverName: row.serverName,
       lastActivityAt: row.lastActivityAt?.toISOString() ?? null,
-      sessionCount: row.sessionCount,
+      sessionCount: playCountMap.get(row.serverUserId) ?? 0,
       createdAt: row.createdAt.toISOString(),
     }));
 
@@ -872,6 +898,74 @@ export const publicRoutes: FastifyPluginAsync = async (app) => {
       timezone,
       redis: app.redis,
     });
+  });
+
+  /**
+   * GET /activity - Playback activity trends and breakdowns
+   *
+   * Consolidated view of six activity datasets: plays over time, concurrent
+   * streams, day-of-week and hour-of-day distributions, platform usage, and
+   * playback quality breakdown.
+   *
+   * Query params:
+   *   - period: 'week' | 'month' | 'year' (default: month)
+   *   - serverId: Optional UUID to filter to a specific server
+   *   - timezone: IANA timezone for date bucketing (default: UTC)
+   */
+  app.get('/activity', { preHandler: [app.authenticatePublicApi] }, async (request, reply) => {
+    const querySchema = z.object({
+      period: z.enum(['week', 'month', 'year']).default('month'),
+      serverId: z.uuid().optional(),
+      timezone: timezoneSchema,
+    });
+
+    const query = querySchema.safeParse(request.query);
+    if (!query.success) {
+      const details = query.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
+      return reply.badRequest(`Invalid query parameters: ${details}`);
+    }
+
+    const { period, serverId, timezone } = query.data;
+
+    const now = new Date();
+    const durationMs =
+      period === 'week'
+        ? 7 * 24 * 60 * 60 * 1000
+        : period === 'month'
+          ? 30 * 24 * 60 * 60 * 1000
+          : 365 * 24 * 60 * 60 * 1000;
+    const rangeStart = new Date(now.getTime() - durationMs);
+    const bucketInterval = period === 'week' ? '6 hours' : '1 day';
+    const serverFilter = serverId ? sql`AND server_id = ${serverId}` : sql``;
+
+    const [plays, concurrent, byDayOfWeek, byHourOfDay, platforms, quality] = await Promise.all([
+      queryPlaysOverTime({ rangeStart, timezone, bucketInterval, serverFilter }),
+      queryConcurrentStreams({ rangeStart, rangeEnd: now, bucketInterval, serverFilter }),
+      queryPlaysByDayOfWeek({ rangeStart, timezone, serverFilter }),
+      queryPlaysByHourOfDay({ rangeStart, timezone, serverFilter }),
+      queryPlatforms({ rangeStart, serverFilter }),
+      queryQualityBreakdown({ rangeStart, serverFilter }),
+    ]);
+
+    return {
+      period,
+      range: {
+        start: rangeStart.toISOString(),
+        end: now.toISOString(),
+      },
+      plays,
+      concurrent: concurrent.map((r) => ({
+        date: r.hour,
+        total: r.total,
+        direct: r.direct,
+        directStream: r.directStream,
+        transcode: r.transcode,
+      })),
+      byDayOfWeek,
+      byHourOfDay,
+      platforms,
+      quality,
+    };
   });
 
   /**
