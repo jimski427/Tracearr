@@ -42,12 +42,32 @@ vi.mock('../../services/termination.js', () => ({
   terminateSession: vi.fn(),
 }));
 
-// Import mocked db, routes, and termination service
+// Mock the websocket module
+vi.mock('../../websocket/index.js', () => ({
+  disconnectMobileDevice: vi.fn(),
+  disconnectAllMobileDevices: vi.fn(),
+}));
+
+// Import mocked db, routes, termination service, and websocket
 import { db } from '../../db/client.js';
 import { mobileRoutes } from '../mobile.js';
 import { terminateSession } from '../../services/termination.js';
+import { disconnectMobileDevice, disconnectAllMobileDevices } from '../../websocket/index.js';
 
 // Mock Redis
+// Chainable multi mock for Redis transactions
+function createMultiMock() {
+  const chain = {
+    del: vi.fn().mockReturnThis(),
+    setex: vi.fn().mockReturnThis(),
+    exec: vi.fn().mockResolvedValue([
+      [null, 1],
+      [null, 'OK'],
+    ]),
+  };
+  return chain;
+}
+
 const mockRedis = {
   get: vi.fn(),
   set: vi.fn(),
@@ -55,6 +75,7 @@ const mockRedis = {
   del: vi.fn(),
   eval: vi.fn(),
   ttl: vi.fn(),
+  multi: vi.fn(() => createMultiMock()),
 };
 
 // Mock JWT
@@ -236,6 +257,7 @@ describe('Mobile Routes', () => {
     mockRedis.del.mockReset();
     mockRedis.eval.mockReset();
     mockRedis.ttl.mockReset();
+    mockRedis.multi.mockReset().mockImplementation(() => createMultiMock());
     mockJwt.sign.mockReset();
   });
 
@@ -588,8 +610,12 @@ describe('Mobile Routes', () => {
       app = await buildTestApp(ownerUser);
 
       const mockSessions = [
-        createMockSession(),
-        createMockSession({ id: randomUUID(), refreshTokenHash: 'hash456' }),
+        createMockSession({ deviceId: 'device-aaa' }),
+        createMockSession({
+          id: randomUUID(),
+          refreshTokenHash: 'hash456',
+          deviceId: 'device-bbb',
+        }),
       ];
 
       vi.mocked(db.select).mockReturnValue({
@@ -599,6 +625,7 @@ describe('Mobile Routes', () => {
       vi.mocked(db.delete).mockReturnValue(Promise.resolve() as never);
 
       mockRedis.del.mockResolvedValue(1);
+      mockRedis.setex.mockResolvedValue('OK');
 
       const response = await app.inject({
         method: 'DELETE',
@@ -609,7 +636,10 @@ describe('Mobile Routes', () => {
       const body = response.json();
       expect(body.success).toBe(true);
       expect(body.revokedCount).toBe(2);
+      // Blacklist + refresh token delete for each session
+      expect(mockRedis.setex).toHaveBeenCalledTimes(2);
       expect(mockRedis.del).toHaveBeenCalledTimes(2);
+      expect(disconnectAllMobileDevices).toHaveBeenCalledWith(ownerUser.userId);
     });
 
     it('handles empty sessions gracefully', async () => {
@@ -649,7 +679,7 @@ describe('Mobile Routes', () => {
       app = await buildTestApp(ownerUser);
 
       const sessionId = randomUUID();
-      const mockSession = createMockSession({ id: sessionId });
+      const mockSession = createMockSession({ id: sessionId, deviceId: 'device-xyz' });
 
       vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockReturnValue({
@@ -664,6 +694,7 @@ describe('Mobile Routes', () => {
       } as never);
 
       mockRedis.del.mockResolvedValue(1);
+      mockRedis.setex.mockResolvedValue('OK');
 
       const response = await app.inject({
         method: 'DELETE',
@@ -673,6 +704,14 @@ describe('Mobile Routes', () => {
       expect(response.statusCode).toBe(200);
       const body = response.json();
       expect(body.success).toBe(true);
+      // Should blacklist the device
+      expect(mockRedis.setex).toHaveBeenCalledWith(
+        expect.stringContaining('mobile:blacklist:device-xyz'),
+        expect.any(Number),
+        '1'
+      );
+      // Should force-disconnect the device
+      expect(disconnectMobileDevice).toHaveBeenCalledWith('device-xyz');
       expect(mockRedis.del).toHaveBeenCalled();
       expect(db.delete).toHaveBeenCalled();
     });

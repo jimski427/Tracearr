@@ -7,6 +7,7 @@ import fp from 'fastify-plugin';
 import jwt from '@fastify/jwt';
 import { eq } from 'drizzle-orm';
 import type { AuthUser } from '@tracearr/shared';
+import { REDIS_KEYS } from '@tracearr/shared';
 import { db } from '../db/client.js';
 import { users } from '../db/schema.js';
 
@@ -78,12 +79,25 @@ const authPlugin: FastifyPluginAsync = async (app) => {
   });
 
   // Require mobile token decorator - validates token was issued for mobile app
+  // Also checks if the device has been blacklisted (session revoked)
   app.decorate('requireMobile', async function (request: FastifyRequest, reply: FastifyReply) {
     try {
       await request.jwtVerify();
 
       if (!request.user.mobile) {
         reply.forbidden('Mobile access token required');
+        return;
+      }
+
+      // Check if this device's token has been blacklisted (session revoked)
+      if (request.user.deviceId) {
+        const blacklisted = await app.redis.get(
+          REDIS_KEYS.MOBILE_BLACKLISTED_TOKEN(request.user.deviceId)
+        );
+        if (blacklisted) {
+          reply.unauthorized('Session has been revoked');
+          return;
+        }
       }
     } catch {
       reply.unauthorized('Invalid or expired token');

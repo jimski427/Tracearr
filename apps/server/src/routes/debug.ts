@@ -343,6 +343,19 @@ export const debugRoutes: FastifyPluginAsync = async (app) => {
   });
 
   /**
+   * DELETE /debug/mobile - Delete all mobile pairing tokens and sessions
+   */
+  app.delete('/mobile', async () => {
+    const sessionsDeleted = await db.delete(mobileSessions).returning({ id: mobileSessions.id });
+    const tokensDeleted = await db.delete(mobileTokens).returning({ id: mobileTokens.id });
+    return {
+      success: true,
+      sessionsDeleted: sessionsDeleted.length,
+      tokensDeleted: tokensDeleted.length,
+    };
+  });
+
+  /**
    * POST /debug/reset - Full factory reset (deletes everything including owner)
    */
   app.post('/reset', async () => {

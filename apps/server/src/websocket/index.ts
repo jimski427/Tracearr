@@ -7,7 +7,8 @@ import { Server } from 'socket.io';
 import type { Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import type { ServerToClientEvents, ClientToServerEvents, AuthUser } from '@tracearr/shared';
-import { WS_EVENTS } from '@tracearr/shared';
+import { WS_EVENTS, REDIS_KEYS } from '@tracearr/shared';
+import type { Redis } from 'ioredis';
 
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
@@ -17,6 +18,7 @@ interface SocketData {
 }
 
 let io: TypedServer | null = null;
+let redis: Redis | null = null;
 
 /**
  * Verify JWT token for WebSocket connections
@@ -31,7 +33,14 @@ function verifyToken(token: string): AuthUser {
   return decoded;
 }
 
-export function initializeWebSocket(httpServer: HttpServer, basePath = ''): TypedServer {
+export function initializeWebSocket(
+  httpServer: HttpServer,
+  basePath = '',
+  redisClient?: Redis
+): TypedServer {
+  if (redisClient) {
+    redis = redisClient;
+  }
   io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
     cors: {
       origin: process.env.CORS_ORIGIN || true,
@@ -56,8 +65,29 @@ export function initializeWebSocket(httpServer: HttpServer, basePath = ''): Type
 
       // Verify JWT and attach user to socket
       const user = verifyToken(token);
-      (socket.data as SocketData).user = user;
 
+      // Check if this mobile device's token has been blacklisted (revoked)
+      if (user.mobile && user.deviceId && redis) {
+        redis
+          .get(REDIS_KEYS.MOBILE_BLACKLISTED_TOKEN(user.deviceId))
+          .then((blacklisted) => {
+            if (blacklisted) {
+              next(new Error('Session has been revoked'));
+            } else {
+              (socket.data as SocketData).user = user;
+              next();
+            }
+          })
+          .catch((err: unknown) => {
+            console.error('[WebSocket] Blacklist check error:', err);
+            // Allow connection on Redis failure (fail-open for availability)
+            (socket.data as SocketData).user = user;
+            next();
+          });
+        return;
+      }
+
+      (socket.data as SocketData).user = user;
       next();
     } catch (error) {
       console.error('[WebSocket] Auth error:', error);
@@ -74,6 +104,11 @@ export function initializeWebSocket(httpServer: HttpServer, basePath = ''): Type
     // Join user-specific room for targeted messages
     if (user?.userId) {
       void socket.join(`user:${user.userId}`);
+    }
+
+    // Join device-specific room for mobile clients (enables targeted disconnect)
+    if (user?.mobile && user?.deviceId) {
+      void socket.join(`mobile:${user.deviceId}`);
     }
 
     // Join server rooms for server-specific messages
@@ -137,6 +172,33 @@ export function broadcastToServer<K extends keyof ServerToClientEvents>(
         ...args: Parameters<ServerToClientEvents[K]>
       ) => void
     )(event, ...args);
+  }
+}
+
+/**
+ * Force-disconnect a specific mobile device's sockets
+ */
+export function disconnectMobileDevice(deviceId: string): void {
+  if (io) {
+    io.in(`mobile:${deviceId}`).disconnectSockets(true);
+  }
+}
+
+/**
+ * Force-disconnect all mobile sockets for a user
+ */
+export function disconnectAllMobileDevices(userId: string): void {
+  if (!io) return;
+
+  // Iterate sockets in the user's room and disconnect mobile ones
+  const room = io.sockets.adapter.rooms.get(`user:${userId}`);
+  if (!room) return;
+
+  for (const socketId of room) {
+    const socket = io.sockets.sockets.get(socketId);
+    if (socket && (socket.data as SocketData).user?.mobile) {
+      socket.disconnect(true);
+    }
   }
 }
 

@@ -39,6 +39,7 @@ import { db } from '../db/client.js';
 import { mobileTokens, mobileSessions, servers, users, settings, sessions } from '../db/schema.js';
 import { terminateSession } from '../services/termination.js';
 import { hasServerAccess } from '../utils/serverFiltering.js';
+import { disconnectMobileDevice, disconnectAllMobileDevices } from '../websocket/index.js';
 
 // Rate limits for mobile auth endpoints
 const MOBILE_PAIR_MAX_ATTEMPTS = 5; // 5 attempts per 15 minutes
@@ -64,8 +65,11 @@ const MOBILE_TOKEN_PREFIX = 'trr_mob_';
 
 const MOBILE_REFRESH_TTL = 90 * 24 * 60 * 60; // 90 days
 
-// Mobile JWT expiry (longer than web)
-const MOBILE_ACCESS_EXPIRY = '7d';
+// Mobile JWT expiry
+const MOBILE_ACCESS_EXPIRY = '24h';
+
+// TTL for blacklisted tokens (must match MOBILE_ACCESS_EXPIRY)
+const MOBILE_BLACKLIST_TTL = 24 * 60 * 60; // 24 hours in seconds
 
 // Schemas
 const mobilePairSchema = z.object({
@@ -363,11 +367,17 @@ export const mobileRoutes: FastifyPluginAsync = async (app) => {
       .set({ mobileEnabled: false, updatedAt: new Date() })
       .where(eq(settings.id, 1));
 
-    // Revoke all mobile sessions (delete from DB and Redis)
+    // Revoke all mobile sessions with blacklisting and force-disconnect
     const sessionsRows = await db.select().from(mobileSessions);
     for (const session of sessionsRows) {
+      await app.redis.setex(
+        REDIS_KEYS.MOBILE_BLACKLISTED_TOKEN(session.deviceId),
+        MOBILE_BLACKLIST_TTL,
+        '1'
+      );
       await app.redis.del(REDIS_KEYS.MOBILE_REFRESH_TOKEN(session.refreshTokenHash));
     }
+    disconnectAllMobileDevices(authUser.userId);
     await db.delete(mobileSessions);
 
     // Delete all pending tokens
@@ -388,11 +398,24 @@ export const mobileRoutes: FastifyPluginAsync = async (app) => {
       return reply.forbidden('Only server owners can revoke mobile sessions');
     }
 
-    // Delete all sessions from Redis and DB
+    // Revoke all mobile sessions with blacklisting and force-disconnect
     const sessionsRows = await db.select().from(mobileSessions);
+
     for (const session of sessionsRows) {
+      // 1. Blacklist each device
+      await app.redis.setex(
+        REDIS_KEYS.MOBILE_BLACKLISTED_TOKEN(session.deviceId),
+        MOBILE_BLACKLIST_TTL,
+        '1'
+      );
+      // 2. Delete refresh token
       await app.redis.del(REDIS_KEYS.MOBILE_REFRESH_TOKEN(session.refreshTokenHash));
     }
+
+    // 3. Force-disconnect all mobile sockets for this user
+    disconnectAllMobileDevices(authUser.userId);
+
+    // 4. Delete all sessions from DB
     await db.delete(mobileSessions);
 
     app.log.info(
@@ -434,10 +457,20 @@ export const mobileRoutes: FastifyPluginAsync = async (app) => {
 
     const session = sessionRow[0]!;
 
-    // Delete refresh token from Redis
+    // 1. Blacklist the device so existing JWTs are rejected
+    await app.redis.setex(
+      REDIS_KEYS.MOBILE_BLACKLISTED_TOKEN(session.deviceId),
+      MOBILE_BLACKLIST_TTL,
+      '1'
+    );
+
+    // 2. Force-disconnect any active WebSocket connections for this device
+    disconnectMobileDevice(session.deviceId);
+
+    // 3. Delete refresh token from Redis
     await app.redis.del(REDIS_KEYS.MOBILE_REFRESH_TOKEN(session.refreshTokenHash));
 
-    // Delete session from DB (notification_preferences cascade-deleted via FK)
+    // 4. Delete session from DB (notification_preferences cascade-deleted via FK)
     await db.delete(mobileSessions).where(eq(mobileSessions.id, id));
 
     app.log.info(
@@ -719,6 +752,9 @@ export const mobileRoutes: FastifyPluginAsync = async (app) => {
     }
 
     // Redis operations AFTER transaction commits (to prevent inconsistency on rollback)
+    // Clear any blacklist entry for this device (allows re-pairing after revocation)
+    await app.redis.del(REDIS_KEYS.MOBILE_BLACKLISTED_TOKEN(deviceId));
+
     // Delete old refresh token from Redis if we updated an existing session
     if (result.oldRefreshTokenHash) {
       await app.redis.del(REDIS_KEYS.MOBILE_REFRESH_TOKEN(result.oldRefreshTokenHash));
@@ -848,13 +884,16 @@ export const mobileRoutes: FastifyPluginAsync = async (app) => {
       })
       .where(eq(mobileSessions.id, sessionRow[0]!.id));
 
-    // Update Redis
-    await app.redis.del(REDIS_KEYS.MOBILE_REFRESH_TOKEN(refreshTokenHash));
-    await app.redis.setex(
-      REDIS_KEYS.MOBILE_REFRESH_TOKEN(newRefreshTokenHash),
-      MOBILE_REFRESH_TTL,
-      JSON.stringify({ userId, deviceId })
-    );
+    // Atomically rotate refresh token in Redis (delete old + store new in one transaction)
+    await app.redis
+      .multi()
+      .del(REDIS_KEYS.MOBILE_REFRESH_TOKEN(refreshTokenHash))
+      .setex(
+        REDIS_KEYS.MOBILE_REFRESH_TOKEN(newRefreshTokenHash),
+        MOBILE_REFRESH_TTL,
+        JSON.stringify({ userId, deviceId })
+      )
+      .exec();
 
     return {
       accessToken,

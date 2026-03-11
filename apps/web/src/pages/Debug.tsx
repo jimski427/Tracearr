@@ -18,6 +18,7 @@ import {
   Link2,
   Camera,
   Loader2,
+  Smartphone,
 } from 'lucide-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
@@ -630,6 +631,20 @@ export function Debug() {
                 <Button variant="outline" onClick={() => queryClient.invalidateQueries()}>
                   <RotateCcw className="mr-2 h-4 w-4" />
                   Clear Query Cache
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                  onClick={() =>
+                    handleDelete(
+                      'mobile',
+                      'Delete all mobile pairing codes and paired devices. Active devices will be disconnected.'
+                    )
+                  }
+                  disabled={deleteMutation.isPending}
+                >
+                  <Smartphone className="mr-2 h-4 w-4" />
+                  Clear Mobile Devices
                 </Button>
               </div>
 
