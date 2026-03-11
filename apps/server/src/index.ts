@@ -823,7 +823,7 @@ async function initializeServices(app: FastifyInstance) {
 async function initializePostListen(app: FastifyInstance) {
   // Initialize WebSocket server using Fastify's underlying HTTP server
   const httpServer = app.server;
-  initializeWebSocket(httpServer, BASE_PATH);
+  initializeWebSocket(httpServer, BASE_PATH, app.redis);
   app.log.info('WebSocket server initialized');
 
   // Set up Redis pub/sub to forward events to WebSocket clients
