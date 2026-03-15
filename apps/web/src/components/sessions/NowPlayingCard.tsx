@@ -92,32 +92,26 @@ export function NowPlayingCard({
 
   const isPaused = session.state === 'paused';
 
-  // Live ticking paused duration
-  const [totalPausedMs, setTotalPausedMs] = useState<number>(() => {
+  // Live ticking current pause duration (only elapsed time since lastPausedAt)
+  const [currentPausedMs, setCurrentPausedMs] = useState<number>(() => {
     if (isPaused && session.lastPausedAt) {
-      return session.pausedDurationMs + (Date.now() - new Date(session.lastPausedAt).getTime());
+      return Date.now() - new Date(session.lastPausedAt).getTime();
     }
-    return session.pausedDurationMs;
+    return 0;
   });
 
   useEffect(() => {
-    if (!isPaused) {
-      setTotalPausedMs(session.pausedDurationMs);
+    if (!isPaused || !session.lastPausedAt) {
+      setCurrentPausedMs(0);
       return;
     }
     const tick = () => {
-      if (session.lastPausedAt) {
-        setTotalPausedMs(
-          session.pausedDurationMs + (Date.now() - new Date(session.lastPausedAt).getTime())
-        );
-      } else {
-        setTotalPausedMs(session.pausedDurationMs);
-      }
+      setCurrentPausedMs(Date.now() - new Date(session.lastPausedAt!).getTime());
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [isPaused, session.lastPausedAt, session.pausedDurationMs]);
+  }, [isPaused, session.lastPausedAt]);
 
   return (
     <div
@@ -257,7 +251,9 @@ export function NowPlayingCard({
               <span>
                 {isPaused ? (
                   <span className="font-medium text-yellow-500">
-                    Paused · {formatDuration(totalPausedMs, { style: 'compact' })}
+                    {currentPausedMs > 0
+                      ? `Paused · ${formatDuration(currentPausedMs, { style: 'compact' })}`
+                      : 'Paused'}
                   </span>
                 ) : remaining ? (
                   `-${formatDuration(remaining)}`
