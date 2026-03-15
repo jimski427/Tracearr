@@ -40,6 +40,24 @@ export function hasTranscodeConditions(rule: RuleV2): boolean {
 }
 
 /**
+ * Condition fields whose evaluated value changes based on how long a session has been paused.
+ * Rules containing at least one of these fields need periodic re-evaluation while a session
+ * is paused.
+ */
+const PAUSE_CONDITION_FIELDS: ReadonlySet<ConditionField> = new Set(['paused_duration_minutes']);
+
+/**
+ * Check if a rule contains any condition fields that depend on pause state/duration.
+ * Used to filter which rules need periodic re-evaluation while a session is paused.
+ */
+export function hasPauseConditions(rule: RuleV2): boolean {
+  if (!rule.conditions?.groups) return false;
+  return rule.conditions.groups.some((group) =>
+    group.conditions.some((condition) => PAUSE_CONDITION_FIELDS.has(condition.field))
+  );
+}
+
+/**
  * Evaluate a single condition and return evidence.
  */
 function evaluateCondition(context: EvaluationContext, condition: Condition): ConditionEvidence {

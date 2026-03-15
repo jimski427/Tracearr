@@ -34,6 +34,7 @@ import {
   findActiveSession,
   handleMediaChangeAtomic,
   processPollResults,
+  reEvaluateRulesOnPauseState,
   reEvaluateRulesOnTranscodeChange,
   stopSessionAtomic,
 } from './sessionLifecycle.js';
@@ -910,6 +911,38 @@ async function processServerSessions(
 
         // Update existing session with state changes and pause tracking
         await db.update(sessions).set(updatePayload).where(eq(sessions.id, existingSession.id));
+
+        // If session is currently paused, re-evaluate pause-related rules periodically.
+        // This allows time-based rules (e.g. "kill stream if paused > 10 minutes") to fire,
+        // since there is no state-change event to trigger them.
+        if (newState === 'paused' && activeRulesV2.length > 0) {
+          try {
+            const recentSessions = recentSessionsMap.get(serverUserId) ?? [];
+            const violationResults = await reEvaluateRulesOnPauseState({
+              existingSession: {
+                ...existingSession,
+                lastPausedAt: updatePayload.lastPausedAt ?? existingSession.lastPausedAt,
+                pausedDurationMs:
+                  updatePayload.pausedDurationMs ?? existingSession.pausedDurationMs ?? 0,
+              },
+              processed,
+              server: { id: server.id, name: server.name, type: server.type },
+              serverUser: userDetail,
+              activeRulesV2,
+              activeSessions,
+              recentSessions,
+            });
+
+            if (violationResults.length > 0 && pubSubService) {
+              await broadcastViolations(violationResults, existingSession.id, pubSubService);
+            }
+          } catch (error) {
+            console.error(
+              `[Poller] Error re-evaluating pause rules for session ${existingSession.id}:`,
+              error
+            );
+          }
+        }
 
         // Build active session for cache/broadcast (with updated pause tracking values)
         const activeSession = buildActiveSession({
