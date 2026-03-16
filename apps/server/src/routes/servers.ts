@@ -9,6 +9,7 @@ import {
   serverIdParamSchema,
   reorderServersSchema,
   updateServerSchema,
+  pickServerColor,
   SERVER_STATS_CONFIG,
   BANDWIDTH_STATS_CONFIG,
 } from '@tracearr/shared';
@@ -49,6 +50,24 @@ export const serverRoutes: FastifyPluginAsync = async (app) => {
             : undefined // No serverIds = no access (will return empty)
       )
       .orderBy(asc(servers.displayOrder));
+
+    // Backfill colors for any servers missing them
+    const uncolored = serverList.filter((s) => !s.color);
+    if (uncolored.length > 0) {
+      const usedColors = serverList.map((s) => s.color);
+      for (const server of uncolored) {
+        const newColor = pickServerColor(server.type, usedColors);
+        server.color = newColor;
+        usedColors.push(newColor);
+        db.update(servers)
+          .set({ color: newColor })
+          .where(eq(servers.id, server.id))
+          .execute()
+          .catch((err) =>
+            app.log.warn({ err, serverId: server.id }, 'Failed to backfill server color')
+          );
+      }
+    }
 
     return { data: serverList };
   });
@@ -134,6 +153,13 @@ export const serverRoutes: FastifyPluginAsync = async (app) => {
       return reply.badRequest('Failed to connect to server. Please verify URL and token.');
     }
 
+    // Auto-assign a color based on server type and already-used colors
+    const existingColors = await db.select({ color: servers.color }).from(servers);
+    const color = pickServerColor(
+      type,
+      existingColors.map((s) => s.color)
+    );
+
     // Save server with plain text token (DB is localhost-only)
     const inserted = await db
       .insert(servers)
@@ -142,6 +168,7 @@ export const serverRoutes: FastifyPluginAsync = async (app) => {
         type,
         url,
         token,
+        color,
         plexAccountId, // Links Plex servers to their owning account (undefined for non-Plex)
       })
       .returning({
@@ -149,6 +176,7 @@ export const serverRoutes: FastifyPluginAsync = async (app) => {
         name: servers.name,
         type: servers.type,
         url: servers.url,
+        color: servers.color,
         createdAt: servers.createdAt,
         updatedAt: servers.updatedAt,
       });
