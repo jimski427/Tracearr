@@ -186,16 +186,22 @@ export async function terminateSession(
         await cacheService.removeActiveSession(session.id);
         await cacheService.removeUserSession(session.serverUserId, session.id);
 
-        // Set a cooldown to prevent re-creating this session if delayed SSE events arrive.
-        // Only for Plex: Plex continues reporting terminated sessions as active for several
-        // minutes. Emby/Jellyfin drop sessions immediately and reuse session IDs per device,
-        // so a cooldown would block legitimate new streams for up to 5 minutes.
-        if (session.server.type === 'plex' && session.ratingKey) {
-          await cacheService.setTerminationCooldown(
-            session.serverId,
-            session.sessionKey,
-            session.ratingKey
-          );
+        // Cooldown prevents re-creating this session if it reappears in polls
+        if (session.ratingKey) {
+          if (session.server.type === 'plex') {
+            await cacheService.setTerminationCooldown(
+              session.serverId,
+              session.sessionKey,
+              session.ratingKey
+            );
+          } else {
+            await cacheService.setTerminationCooldownComposite(
+              session.serverId,
+              session.serverUserId,
+              session.deviceId || session.sessionKey,
+              session.ratingKey
+            );
+          }
         }
       } catch (cacheErr) {
         // Log but don't fail - DB is source of truth

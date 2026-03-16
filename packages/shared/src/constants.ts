@@ -129,6 +129,8 @@ export const REDIS_KEYS = {
   RATE_LIMIT_MOBILE_REFRESH: (ip: string) =>
     `${_redisPrefix}tracearr:ratelimit:mobile:refresh:${ip}`,
   SERVER_HEALTH: (serverId: string) => `${_redisPrefix}tracearr:servers:${serverId}:health`,
+  SERVER_HEALTH_FAIL_COUNT: (serverId: string) =>
+    `${_redisPrefix}tracearr:servers:${serverId}:health:fails`,
   get PUBSUB_EVENTS() {
     return `${_redisPrefix}tracearr:events`;
   },
@@ -209,6 +211,13 @@ export const REDIS_KEYS = {
     `${_redisPrefix}session:lock:${serverId}:${sessionKey}`,
   TERMINATION_COOLDOWN: (serverId: string, sessionKey: string, ratingKey: string) =>
     `${_redisPrefix}termination:cooldown:${serverId}:${sessionKey}:${ratingKey}`,
+  TERMINATION_COOLDOWN_COMPOSITE: (
+    serverId: string,
+    serverUserId: string,
+    deviceId: string,
+    ratingKey: string
+  ) =>
+    `${_redisPrefix}termination:cooldown:composite:${serverId}:${serverUserId}:${deviceId}:${ratingKey}`,
   // Rule cooldowns
   RULE_COOLDOWN: (ruleId: string, targetId: string) =>
     `${_redisPrefix}tracearr:rule:cooldown:${ruleId}:${targetId}`,
@@ -271,11 +280,19 @@ export const JWT_CONFIG = {
 
 // Polling intervals in milliseconds
 export const POLLING_INTERVALS = {
+  SESSIONS_ACTIVE: 3000,
+  SESSIONS_IDLE: 10000,
+  /** @deprecated Use SESSIONS_ACTIVE */
   SESSIONS: 7000,
   STATS_REFRESH: 60000,
   SERVER_HEALTH: 30000,
   // Reconciliation interval when SSE is active (fallback check)
   SSE_RECONCILIATION: 30 * 1000, // 30 seconds
+} as const;
+
+// Poller health detection
+export const POLLER_CONFIG = {
+  DOWN_THRESHOLD: 3, // consecutive poll failures before declaring server down
 } as const;
 
 // SSE (Server-Sent Events) configuration

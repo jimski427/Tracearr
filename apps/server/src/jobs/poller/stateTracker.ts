@@ -7,6 +7,7 @@
 
 import { SESSION_LIMITS, type SessionState } from '@tracearr/shared';
 import type {
+  BuildCompositeKeyInput,
   PauseAccumulationResult,
   StopDurationResult,
   SessionPauseData,
@@ -419,4 +420,58 @@ export function updateConfirmationState(
     ...state,
     maxViewOffset: Math.max(state.maxViewOffset, viewOffset),
   };
+}
+
+// ============================================================================
+// Session Identity
+// ============================================================================
+
+/**
+ * Build a cache/tracking key for a session.
+ * Plex: `serverId:sessionKey`. JF/Emby: `serverId:userId:deviceId:ratingKey`.
+ */
+export function buildCompositeKey(input: BuildCompositeKeyInput): string {
+  const { serverType, serverId, externalUserId, deviceId, ratingKey, sessionKey } = input;
+
+  if (serverType === 'plex') {
+    return `${serverId}:${sessionKey}`;
+  }
+
+  const deviceIdentifier = deviceId || sessionKey;
+  return `${serverId}:${externalUserId}:${deviceIdentifier}:${ratingKey ?? ''}`;
+}
+
+// ============================================================================
+// Change Detection
+// ============================================================================
+
+/** True if the session has state/quality/codec changes worth writing to DB immediately. */
+export function shouldWriteToDb(
+  existing: {
+    state: string;
+    isTranscode: boolean;
+    videoDecision: string | null;
+    audioDecision: string | null;
+    watched: boolean;
+    sourceVideoCodec?: string | null;
+    sourceAudioCodec?: string | null;
+  },
+  processed: {
+    state: string;
+    isTranscode: boolean;
+    videoDecision: string | null;
+    audioDecision: string | null;
+    sourceVideoCodec?: string | null;
+    sourceAudioCodec?: string | null;
+  },
+  watchedThresholdReached = false
+): boolean {
+  if (existing.state !== processed.state) return true;
+  if (existing.isTranscode !== processed.isTranscode) return true;
+  if (existing.videoDecision !== processed.videoDecision) return true;
+  if (existing.audioDecision !== processed.audioDecision) return true;
+  if (watchedThresholdReached && !existing.watched) return true;
+  if (existing.sourceVideoCodec !== processed.sourceVideoCodec) return true;
+  if (existing.sourceAudioCodec !== processed.sourceAudioCodec) return true;
+  return false;
 }
