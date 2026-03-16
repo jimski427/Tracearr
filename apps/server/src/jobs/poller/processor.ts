@@ -35,6 +35,7 @@ import {
   handleMediaChangeAtomic,
   processPollResults,
   reEvaluateRulesOnTranscodeChange,
+  reEvaluateRulesOnPauseChange,
   stopSessionAtomic,
 } from './sessionLifecycle.js';
 import { mapMediaSession, pickStreamDetailFields } from './sessionMapper.js';
@@ -871,6 +872,32 @@ async function processServerSessions(
                 error
               );
             }
+          }
+        }
+
+        // Re-evaluate rules with paused_duration_minutes conditions on every poll cycle
+        // where the session is paused. This allows rules like "notify if paused > 10 minutes"
+        // to fire once the threshold is reached, since paused_duration_minutes grows over time.
+        if (newState === 'paused' && activeRulesV2.length > 0) {
+          try {
+            const recentSessions = recentSessionsMap.get(serverUserId) ?? [];
+            const violationResults = await reEvaluateRulesOnPauseChange({
+              existingSession,
+              server: { id: server.id, name: server.name, type: server.type },
+              serverUser: userDetail,
+              activeRulesV2,
+              activeSessions,
+              recentSessions,
+            });
+
+            if (violationResults.length > 0 && pubSubService) {
+              await broadcastViolations(violationResults, existingSession.id, pubSubService);
+            }
+          } catch (error) {
+            console.error(
+              `[Poller] Error re-evaluating rules on pause change for session ${existingSession.id}:`,
+              error
+            );
           }
         }
 
