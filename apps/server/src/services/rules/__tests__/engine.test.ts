@@ -7,6 +7,7 @@ import {
   evaluateRuleAsync,
   evaluateRulesAsync,
   hasTranscodeConditions,
+  hasPauseDurationConditions,
 } from '../engine.js';
 
 // Mock geoipService
@@ -803,5 +804,71 @@ describe('hasTranscodeConditions', () => {
     });
 
     expect(hasTranscodeConditions(rule)).toBe(false);
+  });
+});
+
+describe('hasPauseDurationConditions', () => {
+  it('returns true for rule with paused_duration_minutes condition', () => {
+    const rule = createMockRule({
+      conditions: {
+        groups: [
+          { conditions: [{ field: 'paused_duration_minutes', operator: 'gt', value: 5 }] },
+        ],
+      },
+    });
+
+    expect(hasPauseDurationConditions(rule)).toBe(true);
+  });
+
+  it('returns false for rule with only non-pause conditions', () => {
+    const rule = createMockRule({
+      conditions: {
+        groups: [
+          { conditions: [{ field: 'concurrent_streams', operator: 'gt', value: 1 }] },
+          { conditions: [{ field: 'trust_score', operator: 'lt', value: 50 }] },
+        ],
+      },
+    });
+
+    expect(hasPauseDurationConditions(rule)).toBe(false);
+  });
+
+  it('returns true when paused_duration_minutes is mixed with other conditions', () => {
+    const rule = createMockRule({
+      conditions: {
+        groups: [
+          { conditions: [{ field: 'paused_duration_minutes', operator: 'gte', value: 10 }] },
+          { conditions: [{ field: 'media_type', operator: 'eq', value: 'movie' }] },
+        ],
+      },
+    });
+
+    expect(hasPauseDurationConditions(rule)).toBe(true);
+  });
+
+  it('returns false for rule with null conditions', () => {
+    const rule = createMockRule({
+      conditions: null as unknown as { groups: [] },
+    });
+
+    expect(hasPauseDurationConditions(rule)).toBe(false);
+  });
+
+  it('returns false for rule with empty groups', () => {
+    const rule = createMockRule({
+      conditions: { groups: [] },
+    });
+
+    expect(hasPauseDurationConditions(rule)).toBe(false);
+  });
+
+  it('returns false for is_transcoding (not a pause-duration field)', () => {
+    const rule = createMockRule({
+      conditions: {
+        groups: [{ conditions: [{ field: 'is_transcoding', operator: 'eq', value: true }] }],
+      },
+    });
+
+    expect(hasPauseDurationConditions(rule)).toBe(false);
   });
 });
