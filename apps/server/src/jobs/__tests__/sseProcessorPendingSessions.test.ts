@@ -183,6 +183,8 @@ const mockCacheService = {
   withSessionCreateLock: vi.fn().mockImplementation(async (_s, _k, op) => op()),
   hasTerminationCooldown: vi.fn().mockResolvedValue(false),
   setTerminationCooldown: vi.fn(),
+  hasTerminationCooldownComposite: vi.fn().mockResolvedValue(false),
+  setTerminationCooldownComposite: vi.fn(),
   // Pending session methods
   getPendingSession: vi.fn().mockResolvedValue(null),
   setPendingSession: vi.fn(),

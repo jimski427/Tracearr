@@ -119,17 +119,11 @@ export function NowPlayingCard({
         'group animate-fade-in bg-card card-hover relative overflow-hidden rounded-xl border',
         onClick && 'cursor-pointer'
       )}
+      style={
+        isMultiServer && serverColor ? { boxShadow: `inset 3px 0 0 0 ${serverColor}` } : undefined
+      }
       onClick={onClick}
     >
-      {/* Server color accent */}
-      {isMultiServer && serverColor && (
-        <div
-          className="absolute top-0 left-0 z-10 h-full w-1"
-          style={{ backgroundColor: serverColor }}
-          aria-hidden="true"
-        />
-      )}
-
       {/* Background with poster blur */}
       {posterUrl && (
         <div
@@ -174,40 +168,53 @@ export function NowPlayingCard({
         <div className="flex min-w-0 flex-1 flex-col justify-between">
           {/* Top row: User and badges */}
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Avatar className="border-background h-7 w-7 border-2 shadow">
+            <div className="flex min-w-0 items-center gap-2">
+              <Avatar className="border-background h-7 w-7 shrink-0 border-2 shadow">
                 <AvatarImage src={avatarUrl} alt={session.user.username} />
                 <AvatarFallback className="text-xs">
                   {session.user.username.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="text-sm font-medium">
+              <span
+                className="truncate text-sm font-medium"
+                title={session.user.identityName ?? session.user.username}
+              >
                 {session.user.identityName ?? session.user.username}
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              {/* Quality badge */}
+            <div className="flex shrink-0 items-center gap-1.5">
+              {/* Quality badge - icon only with tooltip */}
               {(() => {
                 const isHwTranscode =
                   session.isTranscode &&
                   !!(session.transcodeInfo?.hwEncoding || session.transcodeInfo?.hwDecoding);
 
-                if (session.isTranscode) {
-                  return (
-                    <Badge variant="warning" className="gap-1 text-xs">
-                      {isHwTranscode ? <Cpu className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
-                      Transcode
-                    </Badge>
-                  );
-                }
+                const label = session.isTranscode
+                  ? isHwTranscode
+                    ? 'HW Transcode'
+                    : 'Transcode'
+                  : session.videoDecision === 'copy' || session.audioDecision === 'copy'
+                    ? 'Direct Stream'
+                    : 'Direct Play';
+
+                const icon = session.isTranscode ? (
+                  isHwTranscode ? (
+                    <Cpu className="h-3.5 w-3.5" />
+                  ) : (
+                    <Zap className="h-3.5 w-3.5" />
+                  )
+                ) : (
+                  <MonitorPlay className="h-3.5 w-3.5" />
+                );
 
                 return (
-                  <Badge variant="success" className="gap-1 text-xs">
-                    <MonitorPlay className="h-3 w-3" />
-                    {session.videoDecision === 'copy' || session.audioDecision === 'copy'
-                      ? 'Direct Stream'
-                      : 'Direct Play'}
+                  <Badge
+                    variant={session.isTranscode ? 'warning' : 'success'}
+                    className="h-6 w-6 justify-center p-0"
+                    title={label}
+                  >
+                    {icon}
                   </Badge>
                 );
               })()}

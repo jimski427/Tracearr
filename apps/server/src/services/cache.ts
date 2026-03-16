@@ -44,6 +44,8 @@ export interface CacheService {
   // Server health tracking
   getServerHealth(serverId: string): Promise<boolean | null>;
   setServerHealth(serverId: string, isHealthy: boolean): Promise<void>;
+  incrServerFailCount(serverId: string): Promise<number>;
+  resetServerFailCount(serverId: string): Promise<void>;
 
   // Generic cache operations
   invalidateCache(key: string): Promise<void>;
@@ -59,6 +61,18 @@ export interface CacheService {
   // Termination cooldown (prevents re-creating recently terminated sessions)
   setTerminationCooldown(serverId: string, sessionKey: string, ratingKey: string): Promise<void>;
   hasTerminationCooldown(serverId: string, sessionKey: string, ratingKey: string): Promise<boolean>;
+  setTerminationCooldownComposite(
+    serverId: string,
+    serverUserId: string,
+    deviceId: string,
+    ratingKey: string
+  ): Promise<void>;
+  hasTerminationCooldownComposite(
+    serverId: string,
+    serverUserId: string,
+    deviceId: string,
+    ratingKey: string
+  ): Promise<boolean>;
 
   // Pending sessions (Redis-first, not yet in DB)
   // Sessions stay here until 30s confirmation threshold, then persist to DB
@@ -388,6 +402,17 @@ export function createCacheService(redis: Redis): CacheService {
       );
     },
 
+    async incrServerFailCount(serverId: string): Promise<number> {
+      const key = REDIS_KEYS.SERVER_HEALTH_FAIL_COUNT(serverId);
+      const count = await redis.incr(key);
+      await redis.expire(key, CACHE_TTL.SERVER_HEALTH);
+      return count;
+    },
+
+    async resetServerFailCount(serverId: string): Promise<void> {
+      await redis.del(REDIS_KEYS.SERVER_HEALTH_FAIL_COUNT(serverId));
+    },
+
     // Generic cache operations
     async invalidateCache(key: string): Promise<void> {
       await redis.del(key);
@@ -436,6 +461,36 @@ export function createCacheService(redis: Redis): CacheService {
       const cooldownKey = REDIS_KEYS.TERMINATION_COOLDOWN(serverId, sessionKey, ratingKey);
       const exists = await redis.exists(cooldownKey);
       return exists === 1;
+    },
+
+    async setTerminationCooldownComposite(
+      serverId: string,
+      serverUserId: string,
+      deviceId: string,
+      ratingKey: string
+    ): Promise<void> {
+      const cooldownKey = REDIS_KEYS.TERMINATION_COOLDOWN_COMPOSITE(
+        serverId,
+        serverUserId,
+        deviceId,
+        ratingKey
+      );
+      await redis.setex(cooldownKey, 300, '1');
+    },
+
+    async hasTerminationCooldownComposite(
+      serverId: string,
+      serverUserId: string,
+      deviceId: string,
+      ratingKey: string
+    ): Promise<boolean> {
+      const cooldownKey = REDIS_KEYS.TERMINATION_COOLDOWN_COMPOSITE(
+        serverId,
+        serverUserId,
+        deviceId,
+        ratingKey
+      );
+      return (await redis.exists(cooldownKey)) === 1;
     },
 
     // Pending sessions (Redis-first architecture)
