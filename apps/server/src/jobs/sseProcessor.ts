@@ -352,6 +352,60 @@ async function handlePaused(event: {
     const result = await fetchFullSession(serverId, notification.sessionKey);
     if (result) {
       await updateExistingSession(existingSession, result.session, 'paused');
+    } else {
+      // fetchFullSession returned null (Plex API didn't list the session yet after pause).
+      // Apply a state-only update so the cache and dashboard reflect the pause immediately.
+      console.warn(
+        `[SSEProcessor] fetchFullSession returned null for paused event on session ${existingSession.id} — applying state-only cache update`
+      );
+
+      const now = new Date();
+      const pauseResult = calculatePauseAccumulation(
+        existingSession.state,
+        'paused',
+        {
+          lastPausedAt: existingSession.lastPausedAt,
+          pausedDurationMs: existingSession.pausedDurationMs || 0,
+        },
+        now
+      );
+
+      // Update the DB record with the new pause state
+      await db
+        .update(sessions)
+        .set({
+          state: 'paused',
+          lastSeenAt: now,
+          lastPausedAt: pauseResult.lastPausedAt,
+          pausedDurationMs: pauseResult.pausedDurationMs,
+        })
+        .where(eq(sessions.id, existingSession.id));
+
+      // Update the Redis cache and broadcast so the dashboard re-renders
+      if (cacheService) {
+        let cached = await cacheService.getSessionById(existingSession.id);
+
+        if (!cached) {
+          const allActive = await cacheService.getAllActiveSessions();
+          cached = allActive.find((s) => s.id === existingSession.id) || null;
+        }
+
+        if (cached) {
+          cached.state = 'paused';
+          cached.lastPausedAt = pauseResult.lastPausedAt;
+          cached.pausedDurationMs = pauseResult.pausedDurationMs;
+
+          await cacheService.updateActiveSession(cached);
+
+          if (pubSubService) {
+            await pubSubService.publish('session:updated', cached);
+          }
+        } else {
+          console.warn(
+            `[SSEProcessor] Session ${existingSession.id} not found in cache during pause fallback — dashboard will sync on next poll`
+          );
+        }
+      }
     }
   } catch (error) {
     console.error('[SSEProcessor] Error handling paused event:', error);
