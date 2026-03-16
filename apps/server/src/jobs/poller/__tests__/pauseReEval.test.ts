@@ -476,7 +476,7 @@ describe('reEvaluateRulesOnPauseChange', () => {
           ruleName: 'Notify if Paused > 5 minutes',
           matched: true,
           matchedGroups: [0],
-          actions: [{ type: 'notify' }],
+          actions: [{ type: 'notify', channels: ['push'] }],
         },
       ]);
 
@@ -484,7 +484,7 @@ describe('reEvaluateRulesOnPauseChange', () => {
 
       const input = createDefaultInput({
         activeRulesV2: [
-          createPauseDurationRule({ actions: { actions: [{ type: 'notify' }] } }),
+          createPauseDurationRule({ actions: { actions: [{ type: 'notify', channels: ['push'] }] } }),
         ],
       });
       await reEvaluateRulesOnPauseChange(input);
