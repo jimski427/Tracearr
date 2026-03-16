@@ -31,6 +31,7 @@ import {
   shouldRecordSession,
 } from './stateTracker.js';
 import type {
+  CompositeSessionIdentity,
   MediaChangeInput,
   MediaChangeResult,
   PendingSessionData,
@@ -394,6 +395,31 @@ export async function findActiveSession(
     .select()
     .from(sessions)
     .where(and(...conditions))
+    .limit(1);
+
+  return rows[0] || null;
+}
+
+/** Find an active session by composite identity (JF/Emby). */
+export async function findActiveSessionByComposite(
+  identity: CompositeSessionIdentity
+): Promise<typeof sessions.$inferSelect | null> {
+  const { serverId, serverUserId, deviceId, ratingKey } = identity;
+  const chunkBound = new Date(Date.now() - ACTIVE_SESSION_CHUNK_BOUND_MS);
+
+  const rows = await db
+    .select()
+    .from(sessions)
+    .where(
+      and(
+        eq(sessions.serverId, serverId),
+        eq(sessions.serverUserId, serverUserId),
+        eq(sessions.deviceId, deviceId),
+        eq(sessions.ratingKey, ratingKey),
+        isNull(sessions.stoppedAt),
+        gte(sessions.startedAt, chunkBound)
+      )
+    )
     .limit(1);
 
   return rows[0] || null;

@@ -60,6 +60,24 @@ export interface SessionIdentity {
   ratingKey?: string | null;
 }
 
+/** JF/Emby session identity: user+device+content (stable across session.Id changes). */
+export interface CompositeSessionIdentity {
+  serverId: string;
+  serverUserId: string;
+  deviceId: string;
+  ratingKey: string;
+}
+
+/** Input for building a session cache/tracking key. */
+export interface BuildCompositeKeyInput {
+  serverType: 'plex' | 'jellyfin' | 'emby';
+  serverId: string;
+  externalUserId: string;
+  deviceId: string | null;
+  ratingKey: string | null;
+  sessionKey: string;
+}
+
 // ============================================================================
 // Session Types
 // ============================================================================
@@ -206,6 +224,9 @@ export interface SessionPauseData {
  * Session must have 30s of progress OR be active for 30s before rules evaluate.
  */
 export const PLAYBACK_CONFIRM_THRESHOLD_MS = 30_000;
+
+/** Periodic DB flush for progress/lastSeenAt when no state changes. */
+export const DB_WRITE_FLUSH_INTERVAL_MS = 30_000;
 
 /**
  * Tracking data for playback confirmation (stored in Redis session state)

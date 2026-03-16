@@ -30,8 +30,10 @@ import { enqueueNotification } from '../notificationQueue.js';
 import { batchGetRecentUserSessions, getActiveRulesV2 } from './database.js';
 import {
   buildActiveSession,
+  buildPendingActiveSession,
   createSessionWithRulesAtomic,
   findActiveSession,
+  findActiveSessionByComposite,
   handleMediaChangeAtomic,
   processPollResults,
   reEvaluateRulesOnTranscodeChange,
@@ -39,12 +41,16 @@ import {
 } from './sessionLifecycle.js';
 import { mapMediaSession, pickStreamDetailFields } from './sessionMapper.js';
 import {
+  buildCompositeKey,
   calculatePauseAccumulation,
   checkWatchCompletion,
   detectMediaChange,
   shouldForceStopStaleSession,
+  shouldWriteToDb,
 } from './stateTracker.js';
+import { DB_WRITE_FLUSH_INTERVAL_MS } from './types.js';
 import type { PollerConfig, ServerProcessingResult, ServerWithToken } from './types.js';
+import { updatePendingSession } from './pendingConfirmation.js';
 import { broadcastViolations } from './violations.js';
 
 // ============================================================================
@@ -55,10 +61,12 @@ let pollingInterval: NodeJS.Timeout | null = null;
 let staleSweepInterval: NodeJS.Timeout | null = null;
 let cacheService: CacheService | null = null;
 let pubSubService: PubSubService | null = null;
+let previousPollHadSessions = false;
+let currentPollIntervalMs: number = POLLING_INTERVALS.SESSIONS_IDLE;
 
 const defaultConfig: PollerConfig = {
   enabled: true,
-  intervalMs: POLLING_INTERVALS.SESSIONS,
+  intervalMs: POLLING_INTERVALS.SESSIONS_IDLE,
 };
 
 // Time bound for active session queries to limit TimescaleDB chunk scanning.
@@ -76,6 +84,9 @@ const ACTIVE_SESSION_CHUNK_BOUND_MS = 7 * 24 * 60 * 60 * 1000;
 // Key: `serverId:sessionKey`, Value: ActiveSession snapshot for notification on confirmed stop.
 const missedPollTracking = new Map<string, ActiveSession>();
 
+// Last DB write time per session — for 30s periodic flush.
+const lastDbWriteMap = new Map<string, number>();
+
 /**
  * Handle first-miss grace period entries for a set of cached session keys.
  * Sessions that just disappeared from the API response are removed from cache
@@ -85,15 +96,26 @@ const missedPollTracking = new Map<string, ActiveSession>();
 async function handleFirstMisses(
   cachedKeys: Iterable<string>,
   serverId: string,
-  activeSessions: ActiveSession[]
+  activeSessions: ActiveSession[],
+  serverTypeMap: Map<string, string>
 ): Promise<void> {
   for (const cachedKey of cachedKeys) {
     if (!cachedKey.startsWith(`${serverId}:`)) continue;
     if (missedPollTracking.has(cachedKey)) continue; // Already in grace period
 
-    const cachedActiveSession = activeSessions.find(
-      (s) => `${s.serverId}:${s.sessionKey}` === cachedKey
-    );
+    const cachedActiveSession = activeSessions.find((s) => {
+      const sType = (serverTypeMap.get(s.serverId) ?? 'plex') as 'plex' | 'jellyfin' | 'emby';
+      return (
+        buildCompositeKey({
+          serverType: sType,
+          serverId: s.serverId,
+          externalUserId: s.serverUserId,
+          deviceId: s.deviceId ?? null,
+          ratingKey: s.ratingKey ?? null,
+          sessionKey: s.sessionKey,
+        }) === cachedKey
+      );
+    });
     if (!cachedActiveSession) {
       console.warn(
         `[Poller] Cache mismatch for ${cachedKey}: in cachedSessionKeys but not in activeSessions`
@@ -127,24 +149,39 @@ async function handleFirstMisses(
 async function sweepGracePeriod(
   keysToSweep: Set<string>,
   serverId: string,
+  serverTypeMap: Map<string, string>,
   currentSessionKeys?: Set<string>
 ): Promise<void> {
   for (const key of keysToSweep) {
     if (currentSessionKeys?.has(key)) continue; // Reappeared
 
     try {
-      const sessionKey = key.replace(`${serverId}:`, '');
-      const session = await findActiveSession({ serverId, sessionKey });
+      const snapshot = missedPollTracking.get(key);
+      if (!snapshot) {
+        missedPollTracking.delete(key);
+        continue;
+      }
+
+      const serverType = serverTypeMap.get(serverId);
+      const session =
+        serverType && serverType !== 'plex'
+          ? await findActiveSessionByComposite({
+              serverId,
+              serverUserId: snapshot.serverUserId,
+              deviceId: snapshot.deviceId || snapshot.sessionKey,
+              ratingKey: snapshot.ratingKey ?? '',
+            })
+          : await findActiveSession({ serverId, sessionKey: snapshot.sessionKey });
       if (session) {
         const { wasUpdated, needsRetry, retryData } = await stopSessionAtomic({
           session,
           stoppedAt: new Date(),
         });
+        lastDbWriteMap.delete(session.id);
         if (needsRetry && retryData && cacheService) {
           await cacheService.addSessionWriteRetry(session.id, retryData);
         }
         if (wasUpdated) {
-          const snapshot = missedPollTracking.get(key);
           if (snapshot) {
             try {
               await enqueueNotification({ type: 'session_stopped', payload: snapshot });
@@ -213,8 +250,9 @@ async function processServerSessions(
       const keysToSweep = new Set(
         [...missedPollTracking.keys()].filter((k) => k.startsWith(`${server.id}:`))
       );
-      await handleFirstMisses(cachedSessionKeys, server.id, activeSessions);
-      await sweepGracePeriod(keysToSweep, server.id);
+      const sTypeMap = new Map([[server.id, server.type]]);
+      await handleFirstMisses(cachedSessionKeys, server.id, activeSessions, sTypeMap);
+      await sweepGracePeriod(keysToSweep, server.id, sTypeMap);
 
       // stoppedSessionKeys intentionally empty
       return { success: true, newSessions: [], stoppedSessionKeys: [], updatedSessions: [] };
@@ -365,9 +403,17 @@ async function processServerSessions(
     const serverUsersWithNewSessions = new Set<string>();
     for (let i = 0; i < processedSessions.length; i++) {
       const processed = processedSessions[i]!;
-      const sessionKey = `${server.id}:${processed.sessionKey}`;
-      const isNew = !cachedSessionKeys.has(sessionKey);
       const serverUserId = sessionServerUserIds[i];
+      // serverUserId must match what pollServers uses from cachedSessions
+      const sessionKey = buildCompositeKey({
+        serverType: server.type,
+        serverId: server.id,
+        externalUserId: serverUserId ?? processed.externalUserId,
+        deviceId: processed.deviceId,
+        ratingKey: processed.ratingKey,
+        sessionKey: processed.sessionKey,
+      });
+      const isNew = !cachedSessionKeys.has(sessionKey);
       if (isNew && serverUserId) {
         serverUsersWithNewSessions.add(serverUserId);
       }
@@ -378,10 +424,16 @@ async function processServerSessions(
     // Process each session
     for (let i = 0; i < processedSessions.length; i++) {
       const processed = processedSessions[i]!;
-      const sessionKey = `${server.id}:${processed.sessionKey}`;
-      currentSessionKeys.add(sessionKey);
-
       const serverUserId = sessionServerUserIds[i];
+      const sessionKey = buildCompositeKey({
+        serverType: server.type,
+        serverId: server.id,
+        externalUserId: serverUserId ?? processed.externalUserId,
+        deviceId: processed.deviceId,
+        ratingKey: processed.ratingKey,
+        sessionKey: processed.sessionKey,
+      });
+      currentSessionKeys.add(sessionKey);
       if (!serverUserId) {
         console.error('Failed to get/create server user for session');
         continue;
@@ -446,11 +498,19 @@ async function processServerSessions(
 
             // Check if this session was recently terminated (cooldown prevents re-creation)
             if (cacheService && processed.ratingKey) {
-              const hasCooldown = await cacheService.hasTerminationCooldown(
-                server.id,
-                processed.sessionKey,
-                processed.ratingKey
-              );
+              const hasCooldown =
+                server.type === 'plex'
+                  ? await cacheService.hasTerminationCooldown(
+                      server.id,
+                      processed.sessionKey,
+                      processed.ratingKey
+                    )
+                  : await cacheService.hasTerminationCooldownComposite(
+                      server.id,
+                      userDetail.id,
+                      processed.deviceId || processed.sessionKey,
+                      processed.ratingKey
+                    );
               if (hasCooldown) {
                 console.log(
                   `[Poller] Session ${processed.sessionKey} was recently terminated, skipping create`
@@ -459,8 +519,8 @@ async function processServerSessions(
               }
             }
 
-            if (processed.ratingKey && userDetail?.id) {
-              // Time bound reduces TimescaleDB chunk scanning
+            // Duplicate check: Plex-only (JF/Emby use composite keys)
+            if (server.type === 'plex' && processed.ratingKey && userDetail?.id) {
               const chunkBound = new Date(Date.now() - ACTIVE_SESSION_CHUNK_BOUND_MS);
 
               const [existingForContent] = await db
@@ -592,6 +652,7 @@ async function processServerSessions(
         });
 
         newSessions.push(activeSession);
+        lastDbWriteMap.set(insertedSession.id, Date.now());
 
         // Broadcast violations AFTER transaction commits (outside transaction)
         // Wrapped in try-catch to prevent broadcast failures from crashing the poller
@@ -602,26 +663,81 @@ async function processServerSessions(
           // Violations are already persisted in DB, broadcast failure is non-fatal
         }
       } else {
-        // Get existing ACTIVE session to check for state changes
-        const existingSession = await findActiveSession({
-          serverId: server.id,
-          sessionKey: processed.sessionKey,
-          ratingKey: processed.ratingKey,
-        });
-        if (!existingSession) {
-          // Check if SSE has a pending session awaiting confirmation
-          // Pending sessions exist in cache but not DB until 30s confirmation threshold
-          if (cacheService) {
-            const pendingSession = await cacheService.getPendingSession(
-              server.id,
-              processed.sessionKey
+        // Pending session check (cache-first for JF/Emby, SSE for Plex)
+        if (cacheService) {
+          const pendingKey = server.type === 'plex' ? processed.sessionKey : sessionKey;
+          const pendingSession = await cacheService.getPendingSession(server.id, pendingKey);
+          if (pendingSession) {
+            const { updatedData, isConfirmed } = updatePendingSession(
+              pendingSession,
+              processed.state,
+              processed.progressMs,
+              Date.now()
             );
-            if (pendingSession) {
-              // SSE is handling this session - skip to avoid duplicate
-              continue;
-            }
-          }
 
+            if (isConfirmed) {
+              const recentSessions = recentSessionsMap.get(serverUserId) ?? [];
+              const createResult = await cacheService.withSessionCreateLock(
+                server.id,
+                processed.sessionKey,
+                async () =>
+                  createSessionWithRulesAtomic({
+                    processed,
+                    server: { id: server.id, name: server.name, type: server.type },
+                    serverUser: userDetail,
+                    geo,
+                    activeRulesV2,
+                    activeSessions,
+                    recentSessions,
+                    preGeneratedId: updatedData.id,
+                  })
+              );
+              if (createResult && 'insertedSession' in createResult) {
+                await cacheService.deletePendingSession(server.id, pendingKey);
+                const { insertedSession, violationResults, wasTerminatedByRule } = createResult;
+                if (!wasTerminatedByRule) {
+                  const activeSession = buildActiveSession({
+                    session: insertedSession,
+                    processed,
+                    user: userDetail,
+                    geo,
+                    server,
+                  });
+                  newSessions.push(activeSession);
+                  lastDbWriteMap.set(insertedSession.id, Date.now());
+                }
+                if (violationResults.length > 0 && pubSubService) {
+                  try {
+                    await broadcastViolations(violationResults, insertedSession.id, pubSubService);
+                  } catch (err) {
+                    console.error('[Poller] Failed to broadcast violations:', err);
+                  }
+                }
+              }
+            } else {
+              await cacheService.setPendingSession(server.id, pendingKey, updatedData);
+              const activeSession = buildPendingActiveSession(updatedData);
+              updatedSessions.push(activeSession);
+            }
+            continue;
+          }
+        }
+
+        // Get existing ACTIVE session to check for state changes
+        const existingSession =
+          server.type === 'plex'
+            ? await findActiveSession({
+                serverId: server.id,
+                sessionKey: processed.sessionKey,
+                ratingKey: processed.ratingKey,
+              })
+            : await findActiveSessionByComposite({
+                serverId: server.id,
+                serverUserId: userDetail.id,
+                deviceId: processed.deviceId || processed.sessionKey,
+                ratingKey: processed.ratingKey ?? '',
+              });
+        if (!existingSession) {
           // Issue #120: Stale cache entry - session key is in Redis but no active session exists in DB
           // Remove stale cache entry and create session with proper locking to prevent duplicates.
           console.log(
@@ -662,13 +778,20 @@ async function processServerSessions(
               }
 
               // Check if this session was recently terminated (cooldown prevents re-creation)
-              // Note: cacheService is guaranteed non-null here since we're inside withSessionCreateLock
               if (processed.ratingKey) {
-                const hasCooldown = await cacheService!.hasTerminationCooldown(
-                  server.id,
-                  processed.sessionKey,
-                  processed.ratingKey
-                );
+                const hasCooldown =
+                  server.type === 'plex'
+                    ? await cacheService!.hasTerminationCooldown(
+                        server.id,
+                        processed.sessionKey,
+                        processed.ratingKey
+                      )
+                    : await cacheService!.hasTerminationCooldownComposite(
+                        server.id,
+                        userDetail.id,
+                        processed.deviceId || processed.sessionKey,
+                        processed.ratingKey
+                      );
                 if (hasCooldown) {
                   console.log(
                     `[Poller] Session ${processed.sessionKey} was recently terminated, skipping stale recovery`
@@ -677,11 +800,8 @@ async function processServerSessions(
                 }
               }
 
-              // Issue #121: Check if there's already an active session for same user+content
-              // with a DIFFERENT session_key. This happens when Plex reassigns session keys
-              // during transcoder restarts or quality changes. We should NOT create a new
-              // session (which triggers quality change detection) - instead, just update cache.
-              if (processed.ratingKey && userDetail?.id) {
+              // Issue #121: Plex-only duplicate check for session key reassignment.
+              if (server.type === 'plex' && processed.ratingKey && userDetail?.id) {
                 // Time bound reduces TimescaleDB chunk scanning
                 const chunkBound = new Date(Date.now() - ACTIVE_SESSION_CHUNK_BOUND_MS);
 
@@ -744,6 +864,7 @@ async function processServerSessions(
               server,
             });
             newSessions.push(activeSession);
+            lastDbWriteMap.set(insertedSession.id, Date.now());
             cachedSessionKeys.add(sessionKey);
 
             try {
@@ -755,10 +876,11 @@ async function processServerSessions(
           continue;
         }
 
-        // Issue #57: Detect media change (e.g., Emby "Play Next Episode")
-        // When Emby plays next episode, it reuses sessionKey but changes ratingKey.
-        // Stop old session and create new one for proper play count tracking.
-        if (detectMediaChange(existingSession.ratingKey, processed.ratingKey)) {
+        // Issue #57: Plex-only media change detection (e.g. "Play Next Episode").
+        if (
+          server.type === 'plex' &&
+          detectMediaChange(existingSession.ratingKey, processed.ratingKey)
+        ) {
           const recentSessions = recentSessionsMap.get(serverUserId) ?? [];
 
           const mediaChangeResult = await handleMediaChangeAtomic({
@@ -776,7 +898,7 @@ async function processServerSessions(
             const { stoppedSession, insertedSession, violationResults, wasTerminatedByRule } =
               mediaChangeResult;
 
-            // Update cache for stopped session
+            lastDbWriteMap.delete(stoppedSession.id);
             if (cacheService) {
               await cacheService.removeActiveSession(stoppedSession.id);
               await cacheService.removeUserSession(stoppedSession.serverUserId, stoppedSession.id);
@@ -799,7 +921,6 @@ async function processServerSessions(
               continue;
             }
 
-            // Build and add new session
             const activeSession = buildActiveSession({
               session: insertedSession,
               processed,
@@ -808,8 +929,7 @@ async function processServerSessions(
               server,
             });
             newSessions.push(activeSession);
-
-            // Mark as cached within this poll cycle to prevent duplicate processing
+            lastDbWriteMap.set(insertedSession.id, Date.now());
             cachedSessionKeys.add(sessionKey);
           }
 
@@ -826,6 +946,13 @@ async function processServerSessions(
           existingSession.videoDecision !== processed.videoDecision ||
           existingSession.audioDecision !== processed.audioDecision;
 
+        // JF/Emby: session.Id changed (restart)
+        if (server.type !== 'plex' && existingSession.sessionKey !== processed.sessionKey) {
+          console.log(
+            `[Poller] [${server.type.toUpperCase()}] Session ${sessionKey} session.Id changed: ${existingSession.sessionKey} → ${processed.sessionKey}`
+          );
+        }
+
         // Build base update payload
         const updatePayload: Partial<typeof sessions.$inferInsert> = {
           state: newState,
@@ -837,6 +964,10 @@ async function processServerSessions(
           isTranscode: processed.isTranscode,
           videoDecision: processed.videoDecision,
           audioDecision: processed.audioDecision,
+          // Update sessionKey if session.Id changed on restart
+          ...(existingSession.sessionKey !== processed.sessionKey && {
+            sessionKey: processed.sessionKey,
+          }),
         };
 
         // Update stream details when valid (skip if API returned incomplete data)
@@ -908,8 +1039,16 @@ async function processServerSessions(
           }
         }
 
-        // Update existing session with state changes and pause tracking
-        await db.update(sessions).set(updatePayload).where(eq(sessions.id, existingSession.id));
+        // Write to DB only on state changes or every 30s
+        const watchedThresholdReached = updatePayload.watched === true;
+        const hasChanges = shouldWriteToDb(existingSession, processed, watchedThresholdReached);
+        const lastWrite = lastDbWriteMap.get(existingSession.id) ?? 0;
+        const flushElapsed = now.getTime() - lastWrite >= DB_WRITE_FLUSH_INTERVAL_MS;
+
+        if (hasChanges || flushElapsed) {
+          await db.update(sessions).set(updatePayload).where(eq(sessions.id, existingSession.id));
+          lastDbWriteMap.set(existingSession.id, now.getTime());
+        }
 
         // Build active session for cache/broadcast (with updated pause tracking values)
         const activeSession = buildActiveSession({
@@ -942,14 +1081,16 @@ async function processServerSessions(
     const keysToSweep = new Set(
       [...missedPollTracking.keys()].filter((k) => k.startsWith(`${server.id}:`))
     );
+    const sTypeMap = new Map([[server.id, server.type]]);
     await handleFirstMisses(
       [...cachedSessionKeys].filter(
         (k) => k.startsWith(`${server.id}:`) && !currentSessionKeys.has(k)
       ),
       server.id,
-      activeSessions
+      activeSessions,
+      sTypeMap
     );
-    await sweepGracePeriod(keysToSweep, server.id, currentSessionKeys);
+    await sweepGracePeriod(keysToSweep, server.id, sTypeMap, currentSessionKeys);
 
     // stoppedSessionKeys intentionally empty — grace period handles stops inline.
     // processPollResults still processes newSessions and updatedSessions normally.
@@ -1003,7 +1144,26 @@ async function pollServers(): Promise<void> {
 
     // Get cached session keys from atomic SET-based cache
     const cachedSessions = cacheService ? await cacheService.getAllActiveSessions() : [];
-    const cachedSessionKeys = new Set(cachedSessions.map((s) => `${s.serverId}:${s.sessionKey}`));
+
+    const serverTypeMap = new Map(allServers.map((s) => [s.id, s.type]));
+
+    // Plex: serverId:sessionKey, JF/Emby: composite key
+    const cachedSessionKeys = new Set(
+      cachedSessions.map((s) => {
+        const sType = serverTypeMap.get(s.serverId);
+        if (sType && sType !== 'plex') {
+          return buildCompositeKey({
+            serverType: sType,
+            serverId: s.serverId,
+            externalUserId: s.serverUserId,
+            deviceId: s.deviceId ?? null,
+            ratingKey: s.ratingKey ?? null,
+            sessionKey: s.sessionKey,
+          });
+        }
+        return `${s.serverId}:${s.sessionKey}`;
+      })
+    );
 
     // Get active V2 rules
     const activeRulesV2 = await getActiveRulesV2();
@@ -1071,6 +1231,28 @@ async function pollServers(): Promise<void> {
         `Poll complete: ${allNewSessions.length} new, ${allUpdatedSessions.length} updated, ${allStoppedKeys.length} stopped`
       );
     }
+
+    // Adaptive polling
+    const hasActiveSessions =
+      allNewSessions.length > 0 ||
+      allUpdatedSessions.length > 0 ||
+      cachedSessions.length > allStoppedKeys.length;
+
+    if (hasActiveSessions !== previousPollHadSessions && pollingInterval) {
+      const newInterval = hasActiveSessions
+        ? POLLING_INTERVALS.SESSIONS_ACTIVE
+        : POLLING_INTERVALS.SESSIONS_IDLE;
+
+      if (newInterval !== currentPollIntervalMs) {
+        clearInterval(pollingInterval);
+        pollingInterval = setInterval(() => void pollServers(), newInterval);
+        currentPollIntervalMs = newInterval;
+        console.log(
+          `[Poller] Adaptive: switched to ${newInterval}ms (${hasActiveSessions ? 'active' : 'idle'})`
+        );
+      }
+    }
+    previousPollHadSessions = hasActiveSessions;
 
     // Sweep for stale sessions that haven't been seen in a while
     // This catches sessions where server went down or SSE missed the stop event
@@ -1148,6 +1330,7 @@ export async function sweepStaleSessions(): Promise<number> {
         stoppedAt: now,
         forceStopped: true,
       });
+      lastDbWriteMap.delete(staleSession.id);
 
       if (needsRetry && retryData && cacheService) {
         await cacheService.addSessionWriteRetry(staleSession.id, retryData);
@@ -1207,17 +1390,21 @@ export function startPoller(config: Partial<PollerConfig> = {}): void {
     return;
   }
 
-  console.log(`Starting session poller with ${mergedConfig.intervalMs}ms interval`);
+  const initialInterval = POLLING_INTERVALS.SESSIONS_IDLE;
+  currentPollIntervalMs = initialInterval;
+  console.log(
+    `Starting session poller (active: ${POLLING_INTERVALS.SESSIONS_ACTIVE}ms, idle: ${initialInterval}ms)`
+  );
 
   // Run immediately on start
   void pollServers();
 
-  // Then run on interval
-  pollingInterval = setInterval(() => void pollServers(), mergedConfig.intervalMs);
+  // Then run on interval (starts idle, switches to active when sessions detected)
+  pollingInterval = setInterval(() => void pollServers(), initialInterval);
   registerService('poller', {
     name: 'Session Poller',
     description: 'Polls media servers for active sessions',
-    intervalMs: mergedConfig.intervalMs,
+    intervalMs: initialInterval,
   });
 
   // Start stale session sweep (runs every 60 seconds to detect abandoned sessions)
@@ -1254,6 +1441,9 @@ export function stopPoller(): void {
     console.log('Stale session sweep stopped');
   }
   missedPollTracking.clear();
+  lastDbWriteMap.clear();
+  previousPollHadSessions = false;
+  currentPollIntervalMs = POLLING_INTERVALS.SESSIONS_IDLE;
 }
 
 /**
