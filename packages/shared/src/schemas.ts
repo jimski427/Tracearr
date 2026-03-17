@@ -342,7 +342,6 @@ export const sessionBehaviorFieldSchema = z.enum([
   'unique_ips_in_window',
   'unique_devices_in_window',
   'inactive_days',
-  'paused_duration_minutes',
 ]);
 
 export const streamQualityFieldSchema = z.enum([

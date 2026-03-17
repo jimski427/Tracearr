@@ -39,7 +39,6 @@ const CONDITION_FIELD_ICONS: Partial<Record<ConditionField, ReactNode>> = {
   unique_ips_in_window: <Zap className="h-5 w-5" />,
   unique_devices_in_window: <Zap className="h-5 w-5" />,
   inactive_days: <Clock className="h-5 w-5" />,
-  paused_duration_minutes: <Clock className="h-5 w-5" />,
 
   // Stream quality
   source_resolution: <Monitor className="h-5 w-5" />,
@@ -78,7 +77,6 @@ const OPERATOR_SYMBOLS: Record<Operator, string> = {
 // Compact field labels for summary display
 const COMPACT_FIELD_LABELS: Partial<Record<ConditionField, string>> = {
   inactive_days: 'Inactive',
-  paused_duration_minutes: 'Paused',
   concurrent_streams: 'Streams',
   travel_speed_kmh: 'Travel speed',
   active_session_distance_km: 'Session distance',
