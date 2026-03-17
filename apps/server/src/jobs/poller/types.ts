@@ -499,38 +499,6 @@ export interface TranscodeReEvalInput {
 }
 
 // ============================================================================
-// Pause Duration Re-evaluation Types
-// ============================================================================
-
-/**
- * Input for re-evaluating V2 rules when a session's pause state changes.
- * Only rules with paused_duration_minutes conditions are evaluated.
- */
-export interface PauseReEvalInput {
-  /** The existing session row */
-  existingSession: typeof sessions.$inferSelect;
-  /** Server info */
-  server: { id: string; name: string; type: string };
-  /** Server user info */
-  serverUser: {
-    id: string;
-    username: string;
-    thumbUrl: string | null;
-    identityName: string | null;
-    trustScore: number;
-    sessionCount: number;
-    lastActivityAt: Date | null;
-    createdAt: Date;
-  };
-  /** Active V2 rules (will be filtered to pause-duration-related) */
-  activeRulesV2: RuleV2[];
-  /** Active sessions for rule context */
-  activeSessions: Session[];
-  /** Recent sessions for rule evaluation context */
-  recentSessions: Session[];
-}
-
-// ============================================================================
 // Re-exports for convenience
 // ============================================================================
 

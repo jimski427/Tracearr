@@ -192,17 +192,6 @@ export const FIELD_DEFINITIONS: Record<ConditionField, FieldDefinition> = {
     min: 0,
     step: 1,
   },
-  paused_duration_minutes: {
-    field: 'paused_duration_minutes',
-    label: 'Paused Duration',
-    description: 'How long the session has been paused (0 if not currently paused)',
-    category: 'session_behavior',
-    operators: COMPARISON_OPERATORS,
-    valueType: 'number',
-    unit: 'min',
-    min: 0,
-    step: 1,
-  },
 
   // Stream Quality
   source_resolution: {

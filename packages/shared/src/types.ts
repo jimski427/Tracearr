@@ -446,8 +446,7 @@ export type SessionBehaviorField =
   | 'travel_speed_kmh'
   | 'unique_ips_in_window'
   | 'unique_devices_in_window'
-  | 'inactive_days'
-  | 'paused_duration_minutes';
+  | 'inactive_days';
 
 export type StreamQualityField =
   | 'source_resolution'
