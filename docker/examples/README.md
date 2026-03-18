@@ -1,6 +1,6 @@
-# Tracearr Docker Installation
+# Tracearr Docker Examples
 
-Deploy Tracearr using Docker Compose. For full documentation, visit [docs.tracearr.com](https://docs.tracearr.com).
+Example Docker Compose files for deploying Tracearr. For full documentation, visit [docs.tracearr.com](https://docs.tracearr.com).
 
 > **Unraid & TrueNAS:** Use Community Apps / TrueCharts instead of these compose files.
 
@@ -29,7 +29,6 @@ Open `http://localhost:3000` and connect your media server.
 | File                                    | Description                                      | RAM     | Setup       |
 | --------------------------------------- | ------------------------------------------------ | ------- | ----------- |
 | `docker-compose.pg18.yml`               | **Recommended** — PostgreSQL 18 + TimescaleDB HA | 1GB     | Secrets     |
-| `docker-compose.example.yml`            | Standard — PostgreSQL 16                         | 1GB     | Secrets     |
 | `docker-compose.supervised-example.yml` | All-in-one (Unraid bare metal only)              | **2GB** | Zero config |
 
 ---
@@ -50,23 +49,6 @@ docker compose -f docker-compose.pg18.yml up -d
 ```
 
 > **Note:** For new installations only. Data format is incompatible with PostgreSQL 15/16.
-
----
-
-## Standard (PostgreSQL 16)
-
-**File:** `docker-compose.example.yml`
-
-Traditional multi-container setup with official TimescaleDB image.
-
-```bash
-# Generate secrets
-echo "JWT_SECRET=$(openssl rand -hex 32)" > .env
-echo "COOKIE_SECRET=$(openssl rand -hex 32)" >> .env
-
-# Deploy
-docker compose -f docker-compose.example.yml up -d
-```
 
 ---
 
@@ -98,7 +80,7 @@ docker compose -f docker-compose.supervised-example.yml up -d
 
 ## Environment Variables
 
-### Required (Standard/PG18 Only)
+### Required (PG18 Only)
 
 | Variable        | Description                 | Generate               |
 | --------------- | --------------------------- | ---------------------- |
@@ -112,7 +94,6 @@ docker compose -f docker-compose.supervised-example.yml up -d
 | `PORT`        | `3000`     | External port mapping                    |
 | `TZ`          | `UTC`      | Timezone (e.g., `America/New_York`)      |
 | `LOG_LEVEL`   | `info`     | Log verbosity (debug, info, warn, error) |
-| `DB_PASSWORD` | `tracearr` | Database password (standard only)        |
 | `CORS_ORIGIN` | `*`        | Allowed CORS origins                     |
 
 ### Supervised-Only
@@ -129,7 +110,7 @@ docker compose -f docker-compose.supervised-example.yml up -d
 2. Name it `tracearr`
 3. Choose **Web editor**
 4. Paste contents of your chosen compose file
-5. Add environment variables (if using standard/pg18):
+5. Add environment variables (if using pg18):
    - `JWT_SECRET` = (generate with `openssl rand -hex 32`)
    - `COOKIE_SECRET` = (generate with `openssl rand -hex 32`)
 6. Click **Deploy the stack**
