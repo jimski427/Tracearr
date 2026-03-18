@@ -302,8 +302,9 @@ export function createCacheService(redis: Redis): CacheService {
         pipeline.del(REDIS_KEYS.SESSION_BY_ID(sessionId));
       }
 
-      // Update existing session data (already in SET)
+      // Update existing session data and ensure ID is in SET (recreates SET if TTL expired)
       for (const session of updatedSessions) {
+        pipeline.sadd(REDIS_KEYS.ACTIVE_SESSION_IDS, session.id);
         pipeline.setex(
           REDIS_KEYS.SESSION_BY_ID(session.id),
           CACHE_TTL.ACTIVE_SESSIONS,

@@ -21,6 +21,8 @@ function createPool(): pg.Pool {
     connectionTimeoutMillis: 5000, // Max wait to acquire a connection from the pool (not running query timeout)
     maxUses: 7500, // Max queries per connection before refresh (prevents memory leaks)
     allowExitOnIdle: false, // Keep pool alive during idle periods
+    // Disable JIT — counterproductive for OLTP queries against TimescaleDB hypertables.
+    options: '-c jit=off',
   });
 
   // Log pool errors for debugging
@@ -38,10 +40,17 @@ export let db: NodePgDatabase<typeof schema> = drizzle(pool, { schema });
 
 /**
  * Destroy the current pool and create a fresh one.
- * Used after ALTER EXTENSION updates so new connections pick up the updated extension.
+ * Used after ALTER EXTENSION updates so new connections pick up the updated extension,
+ * and during restore to re-establish connections after DB replacement.
+ *
+ * Safe to call even if the pool was already closed via closeDatabase().
  */
 export async function recreatePool(): Promise<void> {
-  await pool.end();
+  try {
+    await pool.end();
+  } catch {
+    // Pool may already be closed (e.g. closeDatabase() was called first)
+  }
   pool = createPool();
   db = drizzle(pool, { schema });
 }
