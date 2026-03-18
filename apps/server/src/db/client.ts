@@ -21,6 +21,8 @@ function createPool(): pg.Pool {
     connectionTimeoutMillis: 5000, // Max wait to acquire a connection from the pool (not running query timeout)
     maxUses: 7500, // Max queries per connection before refresh (prevents memory leaks)
     allowExitOnIdle: false, // Keep pool alive during idle periods
+    // Disable JIT — counterproductive for OLTP queries against TimescaleDB hypertables.
+    options: '-c jit=off',
   });
 
   // Log pool errors for debugging
