@@ -1511,6 +1511,14 @@ function parseLibraryItem(item: Record<string, unknown>): MediaLibraryItem {
     year: parseOptionalNumber(item.year),
     addedAt,
 
+    // Plex item modification timestamp (Unix seconds)
+    updatedAt: (() => {
+      const ts = parseOptionalNumber(item.updatedAt);
+      if (!ts) return undefined;
+      const d = new Date(ts * 1000);
+      return isNaN(d.getTime()) ? undefined : d;
+    })(),
+
     // Quality fields from Media array
     videoResolution: normalizeVideoResolution(parseOptionalString(firstMedia?.videoResolution)),
     videoCodec: parseOptionalString(firstMedia?.videoCodec)?.toUpperCase(),

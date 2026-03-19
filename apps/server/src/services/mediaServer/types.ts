@@ -258,6 +258,9 @@ export interface MediaLibraryItem {
   /** When item was added to library */
   addedAt: Date;
 
+  /** When item was last updated/modified on the server (Plex only) */
+  updatedAt?: Date;
+
   // === Quality Fields (all optional) ===
 
   /** Video resolution string ('4k', '1080p', '720p', 'sd') */

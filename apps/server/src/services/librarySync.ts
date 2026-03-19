@@ -25,6 +25,12 @@ const BATCH_DELAY_MS_INCREMENTAL = 50;
 const SYNC_SAFETY_MARGIN_MS = 5 * 60 * 1000; // 5 minutes
 const SYNC_STATE_TTL = 30 * 24 * 60 * 60; // 30 days in seconds
 
+/** Force a full scan every N scheduled syncs per library (safety net for all server types) */
+const FULL_SCAN_INTERVAL = 7;
+
+/** If incremental sync returns more than this fraction of total items, fall through to full scan */
+const INCREMENTAL_CAP_RATIO = 0.3;
+
 let redisClient: Redis | null = null;
 
 /**
@@ -214,23 +220,31 @@ export class LibrarySyncService {
     const syncState = await this.getSyncState(serverId, libraryId);
 
     // Decision tree: incremental only when we have prior state, count hasn't dropped, and not manual
+    const forceFullScan =
+      triggeredBy === 'manual' ||
+      (syncState.syncCycle > 0 && syncState.syncCycle % FULL_SCAN_INTERVAL === 0);
+
     const isIncremental =
       syncState.lastSyncedAt !== null &&
       syncState.lastItemCount !== null &&
       totalCount >= syncState.lastItemCount &&
-      triggeredBy !== 'manual';
+      !forceFullScan;
 
     if (isIncremental) {
       console.log(
         `[LibrarySync] Incremental sync for ${libraryName}: last synced ${syncState.lastSyncedAt!.toISOString()}, ` +
-          `count ${syncState.lastItemCount} → ${totalCount}`
+          `count ${syncState.lastItemCount} → ${totalCount}, cycle ${syncState.syncCycle + 1}/${FULL_SCAN_INTERVAL}`
       );
     } else {
       const reason = !syncState.lastSyncedAt
         ? 'first sync'
         : totalCount < (syncState.lastItemCount ?? 0)
           ? 'items removed'
-          : 'manual trigger';
+          : forceFullScan && triggeredBy === 'manual'
+            ? 'manual trigger'
+            : forceFullScan
+              ? `periodic full scan (cycle ${syncState.syncCycle})`
+              : 'unknown';
       console.log(`[LibrarySync] Full sync for ${libraryName}: ${reason}`);
     }
 
@@ -286,7 +300,7 @@ export class LibrarySyncService {
         ) {
           console.log(`[LibrarySync] ${libraryName}: no changes since last sync, skipping`);
           const snapshot = await this.copyLastSnapshot(serverId, libraryId);
-          await this.saveSyncState(serverId, libraryId, totalCount);
+          await this.saveSyncState(serverId, libraryId, totalCount, syncState.syncCycle + 1);
           return {
             serverId,
             libraryId,
@@ -298,45 +312,27 @@ export class LibrarySyncService {
           };
         }
 
+        // Cap check: if too many items were returned, fall through to full scan
+        // which also handles orphan detection
+        const incrementalCap = Math.floor(totalCount * INCREMENTAL_CAP_RATIO);
+        const totalIncrementalItems = newItems.length + newLeaves.length;
+
+        if (incrementalCap > 0 && totalIncrementalItems > incrementalCap) {
+          console.log(
+            `[LibrarySync] Incremental returned ${totalIncrementalItems} items (cap: ${incrementalCap}), falling back to full scan`
+          );
+          throw new Error('CAP_EXCEEDED');
+        }
+
         const allItems: MediaLibraryItem[] = [];
+        const combinedItems = [...newItems, ...newLeaves];
 
-        for (let i = 0; i < newItems.length; i += BATCH_SIZE) {
-          const batch = newItems.slice(i, i + BATCH_SIZE);
+        for (let i = 0; i < combinedItems.length; i += BATCH_SIZE) {
+          const batch = combinedItems.slice(i, i + BATCH_SIZE);
           allItems.push(...batch);
           await this.upsertItems(serverId, libraryId, batch);
 
-          if (i + BATCH_SIZE < newItems.length) {
-            await delay(BATCH_DELAY_MS_INCREMENTAL);
-          }
-        }
-
-        // Plex respects offset/limit, so paginate if more items remain
-        if (newItems.length < incrementalCount) {
-          let offset = newItems.length;
-          while (offset < incrementalCount) {
-            const { items } = await client.getLibraryItemsSince(
-              libraryId,
-              syncState.lastSyncedAt!,
-              { offset, limit: BATCH_SIZE }
-            );
-            if (items.length === 0) break;
-
-            allItems.push(...items);
-            await this.upsertItems(serverId, libraryId, items);
-            offset += items.length;
-
-            if (offset < incrementalCount) {
-              await delay(BATCH_DELAY_MS_INCREMENTAL);
-            }
-          }
-        }
-
-        for (let i = 0; i < newLeaves.length; i += BATCH_SIZE) {
-          const batch = newLeaves.slice(i, i + BATCH_SIZE);
-          allItems.push(...batch);
-          await this.upsertItems(serverId, libraryId, batch);
-
-          if (i + BATCH_SIZE < newLeaves.length) {
+          if (i + BATCH_SIZE < combinedItems.length) {
             await delay(BATCH_DELAY_MS_INCREMENTAL);
           }
         }
@@ -355,7 +351,7 @@ export class LibrarySyncService {
           );
         }
 
-        await this.saveSyncState(serverId, libraryId, totalCount);
+        await this.saveSyncState(serverId, libraryId, totalCount, syncState.syncCycle + 1);
 
         return {
           serverId,
@@ -367,10 +363,15 @@ export class LibrarySyncService {
           snapshotId: snapshot?.id ?? null,
         };
       } catch (error) {
-        console.warn(
-          `[LibrarySync] Incremental fetch failed for ${libraryName}, falling back to full scan:`,
-          error
-        );
+        const isCap = error instanceof Error && error.message === 'CAP_EXCEEDED';
+        const msg = isCap
+          ? `Incremental sync exceeded cap for ${libraryName}, using full scan`
+          : `Incremental fetch failed for ${libraryName}, falling back to full scan`;
+        if (isCap) {
+          console.warn(`[LibrarySync] ${msg}`);
+        } else {
+          console.warn(`[LibrarySync] ${msg}`, error);
+        }
         // Fall through to full scan path below
       }
     }
@@ -637,7 +638,7 @@ export class LibrarySyncService {
       console.log(
         `[LibrarySync] Skipping snapshot creation - ${heavyOps.jobType} job is running: ${heavyOps.description}`
       );
-      await this.saveSyncState(serverId, libraryId, totalCount);
+      await this.saveSyncState(serverId, libraryId, totalCount, 0);
       return {
         serverId,
         libraryId,
@@ -652,7 +653,7 @@ export class LibrarySyncService {
     // Create snapshot (may return null if data is invalid - e.g., no file sizes)
     const snapshot = await this.createSnapshot(serverId, libraryId, allItems);
 
-    await this.saveSyncState(serverId, libraryId, totalCount);
+    await this.saveSyncState(serverId, libraryId, totalCount, 0);
 
     return {
       serverId,
@@ -671,17 +672,19 @@ export class LibrarySyncService {
   private async getSyncState(
     serverId: string,
     libraryId: string
-  ): Promise<{ lastSyncedAt: Date | null; lastItemCount: number | null }> {
-    if (!redisClient) return { lastSyncedAt: null, lastItemCount: null };
+  ): Promise<{ lastSyncedAt: Date | null; lastItemCount: number | null; syncCycle: number }> {
+    if (!redisClient) return { lastSyncedAt: null, lastItemCount: null, syncCycle: 0 };
 
-    const [lastStr, countStr] = await Promise.all([
+    const [lastStr, countStr, cycleStr] = await Promise.all([
       redisClient.get(REDIS_KEYS.LIBRARY_SYNC_LAST(serverId, libraryId)),
       redisClient.get(REDIS_KEYS.LIBRARY_SYNC_COUNT(serverId, libraryId)),
+      redisClient.get(REDIS_KEYS.LIBRARY_SYNC_CYCLE(serverId, libraryId)),
     ]);
 
     return {
       lastSyncedAt: lastStr ? new Date(lastStr) : null,
       lastItemCount: countStr ? parseInt(countStr, 10) : null,
+      syncCycle: cycleStr ? parseInt(cycleStr, 10) : 0,
     };
   }
 
@@ -693,7 +696,8 @@ export class LibrarySyncService {
   private async saveSyncState(
     serverId: string,
     libraryId: string,
-    itemCount: number
+    itemCount: number,
+    syncCycle: number
   ): Promise<void> {
     if (!redisClient) return;
 
@@ -709,6 +713,12 @@ export class LibrarySyncService {
       redisClient.set(
         REDIS_KEYS.LIBRARY_SYNC_COUNT(serverId, libraryId),
         String(itemCount),
+        'EX',
+        SYNC_STATE_TTL
+      ),
+      redisClient.set(
+        REDIS_KEYS.LIBRARY_SYNC_CYCLE(serverId, libraryId),
+        String(syncCycle),
         'EX',
         SYNC_STATE_TTL
       ),
