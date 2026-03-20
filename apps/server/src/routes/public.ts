@@ -492,6 +492,7 @@ export const publicRoutes: FastifyPluginAsync = async (app) => {
         role: users.role,
         aggregateTrustScore: users.aggregateTrustScore,
         totalViolations: users.totalViolations,
+        joinedAt: serverUsers.joinedAt,
         createdAt: users.createdAt,
         // Server-specific data
         serverId: serverUsers.serverId,
@@ -537,7 +538,7 @@ export const publicRoutes: FastifyPluginAsync = async (app) => {
       serverName: row.serverName,
       lastActivityAt: row.lastActivityAt?.toISOString() ?? null,
       sessionCount: playCountMap.get(row.serverUserId) ?? 0,
-      createdAt: row.createdAt.toISOString(),
+      createdAt: (row.joinedAt ?? row.createdAt).toISOString(),
     }));
 
     return paginatedResponse(userData, countResult?.count ?? 0, page, pageSize);

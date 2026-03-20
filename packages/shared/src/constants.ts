@@ -195,6 +195,8 @@ export const REDIS_KEYS = {
     `${_redisPrefix}tracearr:library:sync:last:${serverId}:${libraryId}`,
   LIBRARY_SYNC_COUNT: (serverId: string, libraryId: string) =>
     `${_redisPrefix}tracearr:library:sync:count:${serverId}:${libraryId}`,
+  LIBRARY_SYNC_CYCLE: (serverId: string, libraryId: string) =>
+    `${_redisPrefix}tracearr:library:sync:cycle:${serverId}:${libraryId}`,
   // Auth tokens
   REFRESH_TOKEN: (hash: string) => `${_redisPrefix}tracearr:refresh:${hash}`,
   PLEX_TEMP_TOKEN: (token: string) => `${_redisPrefix}tracearr:plex_temp:${token}`,

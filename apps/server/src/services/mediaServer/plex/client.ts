@@ -212,45 +212,16 @@ export class PlexClient implements IMediaServerClient, IMediaServerClientWithHis
   }
 
   /**
-   * Get library items added on or after the given date
-   *
-   * Same as getLibraryItems but filters by addedAt using Plex's addedAt>>= filter.
-   * The date is converted to a unix epoch in seconds.
-   *
-   * @param libraryId - The library section ID
-   * @param since - Only return items added at or after this date
-   * @param options - Pagination options (offset, limit)
-   * @returns Items and total count for pagination tracking
+   * Get library items updated since the given date.
+   * Sorts by updatedAt:desc and paginates until items fall below the cutoff.
    */
   async getLibraryItemsSince(
     libraryId: string,
     since: Date,
-    options?: { offset?: number; limit?: number }
+    _options?: { offset?: number; limit?: number }
   ): Promise<{ items: MediaLibraryItem[]; totalCount: number }> {
-    const offset = options?.offset ?? 0;
-    const limit = options?.limit ?? 100;
-
-    const params = new URLSearchParams({
-      includeGuids: '1',
-      'X-Plex-Container-Start': String(offset),
-      'X-Plex-Container-Size': String(limit),
-      'addedAt>>=': String(Math.floor(since.getTime() / 1000)),
-    });
-
-    const data = await fetchJson<unknown>(
-      `${this.baseUrl}/library/sections/${libraryId}/all?${params}`,
-      {
-        headers: this.buildHeaders(),
-        service: 'plex',
-        timeout: 30000,
-      }
-    );
-
-    const container = data as { MediaContainer?: { totalSize?: number } };
-    const totalCount = container?.MediaContainer?.totalSize ?? 0;
-    const items = parseLibraryItemsResponse(data);
-
-    return { items, totalCount };
+    const sinceUnix = Math.floor(since.getTime() / 1000);
+    return this.fetchItemsSortedByUpdatedAt(`/library/sections/${libraryId}/all`, sinceUnix);
   }
 
   /**
@@ -293,46 +264,71 @@ export class PlexClient implements IMediaServerClient, IMediaServerClientWithHis
     return { items, totalCount };
   }
 
-  /**
-   * Get leaf items (episodes) added on or after the given date
-   *
-   * Same as getLibraryLeaves but filters by addedAt using Plex's addedAt>>= filter.
-   * The date is converted to a unix epoch in seconds.
-   *
-   * @param libraryId - Library section ID
-   * @param since - Only return items added at or after this date
-   * @param options - Pagination options
-   * @returns Episodes and total count for pagination tracking
-   */
+  /** Get leaf items (episodes/tracks) updated since the given date. */
   async getLibraryLeavesSince(
     libraryId: string,
     since: Date,
-    options?: { offset?: number; limit?: number }
+    _options?: { offset?: number; limit?: number }
   ): Promise<{ items: MediaLibraryItem[]; totalCount: number }> {
-    const offset = options?.offset ?? 0;
-    const limit = options?.limit ?? 100;
+    const sinceUnix = Math.floor(since.getTime() / 1000);
+    return this.fetchItemsSortedByUpdatedAt(`/library/sections/${libraryId}/allLeaves`, sinceUnix);
+  }
 
-    const params = new URLSearchParams({
-      includeGuids: '1',
-      'X-Plex-Container-Start': String(offset),
-      'X-Plex-Container-Size': String(limit),
-      'addedAt>>=': String(Math.floor(since.getTime() / 1000)),
-    });
+  /**
+   * Fetch items sorted by updatedAt:desc, collecting items until one falls
+   * below sinceUnix. Replaces the broken addedAt>>= filter which is silently
+   * ignored on Plex 1.43.x+.
+   */
+  private async fetchItemsSortedByUpdatedAt(
+    path: string,
+    sinceUnix: number
+  ): Promise<{ items: MediaLibraryItem[]; totalCount: number }> {
+    const PAGE_SIZE = 100;
+    const MAX_PAGES = 500;
+    const allItems: MediaLibraryItem[] = [];
+    let offset = 0;
+    let pageCount = 0;
 
-    const data = await fetchJson<unknown>(
-      `${this.baseUrl}/library/sections/${libraryId}/allLeaves?${params}`,
-      {
+    while (true) {
+      if (++pageCount > MAX_PAGES) {
+        console.warn(
+          `[PlexClient] Sort-based fetch hit ${MAX_PAGES} page limit on ${path}, returning partial results`
+        );
+        break;
+      }
+      const params = new URLSearchParams({
+        includeGuids: '1',
+        'X-Plex-Container-Start': String(offset),
+        'X-Plex-Container-Size': String(PAGE_SIZE),
+        sort: 'updatedAt:desc',
+      });
+
+      const data = await fetchJson<unknown>(`${this.baseUrl}${path}?${params}`, {
         headers: this.buildHeaders(),
         service: 'plex',
         timeout: 30000,
+      });
+
+      const items = parseLibraryItemsResponse(data);
+      if (items.length === 0) break;
+
+      let hitCutoff = false;
+      for (const item of items) {
+        const itemUpdatedAt = item.updatedAt ? Math.floor(item.updatedAt.getTime() / 1000) : 0;
+
+        if (itemUpdatedAt >= sinceUnix) {
+          allItems.push(item);
+        } else {
+          hitCutoff = true;
+          break;
+        }
       }
-    );
 
-    const container = data as { MediaContainer?: { totalSize?: number } };
-    const totalCount = container?.MediaContainer?.totalSize ?? 0;
-    const items = parseLibraryItemsResponse(data);
+      if (hitCutoff) break;
+      offset += items.length;
+    }
 
-    return { items, totalCount };
+    return { items: allItems, totalCount: allItems.length };
   }
 
   // ==========================================================================
