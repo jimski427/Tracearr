@@ -203,9 +203,9 @@ export async function queryConcurrentStreams(params: {
     running AS (
       SELECT
         event_time,
-        SUM(direct_delta) OVER (ORDER BY event_time, direct_delta DESC) AS direct,
-        SUM(copy_delta) OVER (ORDER BY event_time, copy_delta DESC) AS copy,
-        SUM(transcode_delta) OVER (ORDER BY event_time, transcode_delta DESC) AS transcode
+        SUM(direct_delta) OVER (ORDER BY event_time) AS direct,
+        SUM(copy_delta) OVER (ORDER BY event_time) AS copy,
+        SUM(transcode_delta) OVER (ORDER BY event_time) AS transcode
       FROM events
     ),
     with_total AS (

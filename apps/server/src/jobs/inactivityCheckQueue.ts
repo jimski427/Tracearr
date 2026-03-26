@@ -9,7 +9,7 @@ import { Queue, Worker, type Job, type ConnectionOptions } from 'bullmq';
 import { getRedisPrefix } from '@tracearr/shared';
 import type { Redis } from 'ioredis';
 import { isMaintenance } from '../serverState.js';
-import { eq, and, isNull } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import type {
   Rule,
   AccountInactivityParams,
@@ -326,22 +326,12 @@ async function processInactivityCheck(job: Job<InactivityCheckJobData>): Promise
   console.log(`[Inactivity] Check complete. Created ${totalViolations} violations.`);
 }
 
-/**
- * Check if we should create a new violation
- * Only creates a violation if no existing unacknowledged violation exists
- */
+/** Skip if any violation already exists for this user+rule (dismissed ones are deleted, so those won't block) */
 async function shouldCreateViolation(serverUserId: string, ruleId: string): Promise<boolean> {
-  // Only create if no existing unacknowledged violation exists
   const existing = await db
     .select({ id: violations.id })
     .from(violations)
-    .where(
-      and(
-        eq(violations.serverUserId, serverUserId),
-        eq(violations.ruleId, ruleId),
-        isNull(violations.acknowledgedAt)
-      )
-    )
+    .where(and(eq(violations.serverUserId, serverUserId), eq(violations.ruleId, ruleId)))
     .limit(1);
 
   return existing.length === 0;
