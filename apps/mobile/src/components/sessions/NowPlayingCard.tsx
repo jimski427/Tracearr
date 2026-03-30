@@ -8,8 +8,9 @@
  * - Device icon
  * - Location footer
  */
-import React, { useState, useEffect } from 'react';
-import { View, Image, Pressable, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/components/ui/text';
 import { UserAvatar } from '@/components/ui/user-avatar';
@@ -210,28 +211,6 @@ export function NowPlayingCard({
   });
 
   const isPaused = session.state === 'paused';
-
-  // Live ticking current pause duration (only elapsed time since lastPausedAt)
-  const [currentPausedMs, setCurrentPausedMs] = useState<number>(() => {
-    if (isPaused && session.lastPausedAt) {
-      return Date.now() - new Date(session.lastPausedAt).getTime();
-    }
-    return 0;
-  });
-
-  useEffect(() => {
-    if (!isPaused || !session.lastPausedAt) {
-      setCurrentPausedMs(0);
-      return;
-    }
-    const tick = () => {
-      setCurrentPausedMs(Date.now() - new Date(session.lastPausedAt!).getTime());
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [isPaused, session.lastPausedAt]);
-
   const username = session.user?.username ?? 'Unknown';
   const displayName = session.user?.identityName ?? username;
   const userThumbUrl = session.user?.thumbUrl || null;
@@ -255,7 +234,7 @@ export function NowPlayingCard({
           source={{ uri: posterUrl }}
           style={[StyleSheet.absoluteFill, { opacity: 0.25 }]}
           blurRadius={40}
-          resizeMode="cover"
+          contentFit="cover"
         />
       )}
 
@@ -268,7 +247,7 @@ export function NowPlayingCard({
               source={{ uri: posterUrl }}
               className="bg-card rounded-lg"
               style={{ width: posterWidth, height: posterHeight }}
-              resizeMode="cover"
+              contentFit="cover"
             />
           ) : (
             <View
@@ -398,9 +377,7 @@ export function NowPlayingCard({
           </Text>
           {isPaused ? (
             <Text className="text-[10px] font-medium" style={{ color: colors.warning }}>
-              {currentPausedMs > 0
-                ? `Paused · ${formatDuration(currentPausedMs, { style: 'compact' })}`
-                : 'Paused'}
+              Paused
             </Text>
           ) : (
             <Text className="text-muted-foreground text-[10px]">
