@@ -2,33 +2,33 @@
  * Tautulli API integration and import service
  */
 
-import { eq, and, isNull, isNotNull, sql } from 'drizzle-orm';
-import { z } from 'zod';
 import type { TautulliImportProgress, TautulliImportResult } from '@tracearr/shared';
+import { and, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { z } from 'zod';
 import { db } from '../db/client.js';
-import { sessions, serverUsers, users } from '../db/schema.js';
-import { getSettings } from './settings.js';
-import { refreshAggregates, checkAggregateNeedsRebuild } from '../db/timescale.js';
+import { serverUsers, sessions, users } from '../db/schema.js';
+import { checkAggregateNeedsRebuild, refreshAggregates } from '../db/timescale.js';
 import { enqueueMaintenanceJob } from '../jobs/maintenanceQueue.js';
-import { geoipService } from './geoip.js';
-import { geoasnService } from './geoasn.js';
-import type { PubSubService } from './cache.js';
-import {
-  queryExistingByExternalIds,
-  queryExistingByTimeKeys,
-  createTimeKey,
-  createUserMapping,
-  createSkippedUserTracker,
-  flushInsertBatch,
-  flushUpdateBatch,
-  type SessionUpdate,
-  type TimeBounds,
-  createSimpleProgressPublisher,
-} from './import/index.js';
-import { normalizeClient } from '../utils/platformNormalizer.js';
-import { normalizeStreamDecisions } from '../utils/transcodeNormalizer.js';
 import { sanitizeCodec } from '../utils/codecNormalizer.js';
 import { extractIpFromEndpoint } from '../utils/parsing.js';
+import { normalizeClient } from '../utils/platformNormalizer.js';
+import { normalizeStreamDecisions } from '../utils/transcodeNormalizer.js';
+import type { PubSubService } from './cache.js';
+import { geoasnService } from './geoasn.js';
+import { geoipService } from './geoip.js';
+import {
+  createSimpleProgressPublisher,
+  createSkippedUserTracker,
+  createTimeKey,
+  createUserMapping,
+  flushInsertBatch,
+  flushUpdateBatch,
+  queryExistingByExternalIds,
+  queryExistingByTimeKeys,
+  type SessionUpdate,
+  type TimeBounds,
+} from './import/index.js';
+import { getSettings } from './settings.js';
 
 const PAGE_SIZE = 5000; // Larger batches = fewer API calls (tested up to 10k, scales linearly)
 const REQUEST_TIMEOUT_MS = 30000; // 30 seconds
@@ -991,9 +991,9 @@ export class TautulliService {
             geoLon: geo.lon,
             geoAsnNumber: geo.asnNumber,
             geoAsnOrganization: geo.asnOrganization,
-            playerName: record.player || record.product,
-            deviceId: record.machine_id || null,
-            product: record.product || null,
+            playerName: (record.player || record.product)?.slice(0, 255) ?? null,
+            deviceId: record.machine_id?.slice(0, 255) || null,
+            product: record.product?.slice(0, 255) || null,
             // Use normalizeClient with product info to detect Android TV vs Android
             // product contains context like "Plex for Android (TV)" that platform alone lacks
             ...(() => {
