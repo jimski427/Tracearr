@@ -79,6 +79,10 @@ function createMockRedis() {
           ops.push(() => store.set(key, value));
           return pipeline;
         }),
+        expire: vi.fn(function (_key: string, _seconds: number) {
+          // TTL not tracked in mock; no-op
+          return pipeline;
+        }),
         exec: vi.fn(async function () {
           for (const op of ops) op();
           return [];
