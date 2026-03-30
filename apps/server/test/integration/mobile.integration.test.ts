@@ -1,8 +1,32 @@
 // integration tests for mobile token refresh behavior
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { buildApp } from '../../src/app.js';
+
+let app: Awaited<ReturnType<typeof buildApp>>;
+let validRefreshToken: string;
+
+beforeAll(async () => {
+  app = await buildApp();
+  await app.ready();
+
+  // Obtain a valid refresh token by authenticating
+  const loginRes = await app.inject({
+    method: 'POST',
+    url: '/api/v1/mobile/auth',
+    payload: {
+      username: 'testuser',
+      password: 'testpassword',
+    },
+  });
+
+  validRefreshToken = loginRes.json().refreshToken;
+});
+
+afterAll(async () => {
+  await app.close();
+});
 
 describe('Mobile Token Refresh', () => {
-  // ... other test cases ...
-
   it('should refresh token and rotate refresh token', async () => {
     const res = await app.inject({
       method: 'POST',
