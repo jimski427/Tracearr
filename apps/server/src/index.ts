@@ -198,7 +198,7 @@ const BASE_PATH = process.env.BASE_PATH?.replace(/\/+$/, '').replace(/^\/?/, '/'
 // Phase 1: Build the Fastify app (always succeeds, even without DB/Redis)
 // ============================================================================
 
-async function buildApp(options: { trustProxy?: boolean } = {}) {
+export async function buildApp(options: { trustProxy?: boolean } = {}) {
   const app = Fastify({
     logger: {
       level: process.env.LOG_LEVEL ?? 'info',
