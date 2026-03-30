@@ -1,6 +1,6 @@
 // integration tests for mobile token refresh behavior
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { buildApp } from '../../src/app.js';
+import { buildApp } from '../../src/index.js';
 
 let app: Awaited<ReturnType<typeof buildApp>>;
 let validRefreshToken: string;
