@@ -80,7 +80,6 @@ function createMockRedis() {
           return pipeline;
         }),
         expire: vi.fn(function (_key: string, _seconds: number) {
-          // TTL not tracked in mock; no-op
           return pipeline;
         }),
         exec: vi.fn(async function () {
@@ -615,7 +614,8 @@ describe('Mobile Authentication Integration Tests', () => {
       // New refresh token should be different (rotation)
       expect(body.refreshToken).not.toBe(validRefreshToken);
 
-      // Old token is still accepted within the rotation grace period (allows client retry)
+      // Old refresh token is allowed during the 30s grace period (handles mobile network retries)
+      // Verify it still works within the grace window but returns a fresh token pair
       const secondRes = await app.inject({
         method: 'POST',
         url: '/api/v1/mobile/refresh',
@@ -625,8 +625,15 @@ describe('Mobile Authentication Integration Tests', () => {
       });
 
       expect(secondRes.statusCode).toBe(200);
-      // Each grace-period replay also produces a fresh rotation
-      expect(secondRes.json().refreshToken).not.toBe(validRefreshToken);
+      const secondBody = secondRes.json();
+      expect(secondBody.accessToken).toBeDefined();
+      expect(secondBody.refreshToken).toBeDefined();
+      // Grace period replay should still rotate to yet another token
+      expect(secondBody.refreshToken).not.toBe(validRefreshToken);
+
+      // Update for subsequent tests
+      validRefreshToken = body.refreshToken;
+      mobileJwt = body.accessToken;
     });
 
     it('should reject invalid refresh token', async () => {
