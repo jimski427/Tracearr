@@ -614,7 +614,8 @@ describe('Mobile Authentication Integration Tests', () => {
       // New refresh token should be different (rotation)
       expect(body.refreshToken).not.toBe(validRefreshToken);
 
-      // Old refresh token should no longer work
+      // Old refresh token is allowed during the 30s grace period (handles mobile network retries)
+      // Verify it still works within the grace window but returns a fresh token pair
       const secondRes = await app.inject({
         method: 'POST',
         url: '/api/v1/mobile/refresh',
@@ -623,7 +624,16 @@ describe('Mobile Authentication Integration Tests', () => {
         },
       });
 
-      expect(secondRes.statusCode).toBe(401);
+      expect(secondRes.statusCode).toBe(200);
+      const secondBody = secondRes.json();
+      expect(secondBody.accessToken).toBeDefined();
+      expect(secondBody.refreshToken).toBeDefined();
+      // Grace period replay should still rotate to yet another token
+      expect(secondBody.refreshToken).not.toBe(validRefreshToken);
+
+      // Update for subsequent tests
+      validRefreshToken = body.refreshToken;
+      mobileJwt = body.accessToken;
     });
 
     it('should reject invalid refresh token', async () => {
