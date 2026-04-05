@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { UserDevice } from '@tracearr/shared';
+import { formatLocationCompact } from '@/lib/utils';
 
 interface UserDevicesCardProps {
   devices: UserDevice[];
@@ -113,13 +114,7 @@ function formatLocationShort(loc: {
   region: string | null;
   country: string | null;
 }): string {
-  if (loc.city && loc.region) {
-    return `${loc.city}, ${loc.region}`;
-  }
-  if (loc.city && loc.country) {
-    return `${loc.city}, ${loc.country}`;
-  }
-  return loc.city ?? loc.country ?? 'Unknown';
+  return formatLocationCompact(loc.city, loc.region, loc.country) ?? 'Unknown';
 }
 
 export function UserDevicesCard({ devices, isLoading, totalSessions = 0 }: UserDevicesCardProps) {
