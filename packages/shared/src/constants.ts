@@ -203,6 +203,8 @@ export const REDIS_KEYS = {
   MOBILE_REFRESH_TOKEN: (hash: string) => `${_redisPrefix}tracearr:mobile_refresh:${hash}`,
   MOBILE_BLACKLISTED_TOKEN: (deviceId: string) =>
     `${_redisPrefix}tracearr:mobile:blacklist:${deviceId}`,
+  MOBILE_LAST_SEEN: (deviceId: string) =>
+    `${_redisPrefix}tracearr:mobile:last_seen:${deviceId}`,
   // Rate limiting
   MOBILE_TOKEN_GEN_RATE: (userId: string) => `${_redisPrefix}mobile_token_gen:${userId}`,
   // Distributed locks
@@ -259,6 +261,7 @@ export const CACHE_TTL = {
   LIBRARY_TOP_SHOWS: 300, // 5 minutes
   LIBRARY_CODECS: 300, // 5 minutes
   LIBRARY_RESOLUTION: 300, // 5 minutes
+  MOBILE_LAST_SEEN: 300, // 5 minutes - throttle for device activity updates
   // Filter options (dropdown values change infrequently)
   FILTER_OPTIONS: 120, // 2 minutes
 } as const;
