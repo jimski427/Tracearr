@@ -129,7 +129,7 @@ const authPlugin: FastifyPluginAsync = async (app) => {
           db.update(mobileSessions)
             .set({ lastSeenAt: new Date() })
             .where(eq(mobileSessions.deviceId, request.user.deviceId))
-            .then(() => {}, () => {});
+            .catch(() => undefined);
         }
       }
     } catch {
