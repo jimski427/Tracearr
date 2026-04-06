@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -44,6 +45,7 @@ import type { MobileSession, MobileQRPayload } from '@tracearr/shared';
 import { BASE_PATH, BASE_URL } from '@/lib/basePath';
 
 function MobileSessionCard({ session }: { session: MobileSession }) {
+  const { t } = useTranslation(['settings', 'common', 'notifications']);
   const revokeSession = useRevokeSession();
   const updateSession = useUpdateMobileSession();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -67,7 +69,7 @@ function MobileSessionCard({ session }: { session: MobileSession }) {
                   setShowRenameDialog(true);
                 }}
                 className="hover:text-primary"
-                title="Rename device"
+                title={t('mobile.renameDevice')}
               >
                 <Pencil className="h-3 w-3" />
               </button>
@@ -95,24 +97,24 @@ function MobileSessionCard({ session }: { session: MobileSession }) {
       <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Rename Device</DialogTitle>
-            <DialogDescription>Enter a name to identify this device in the list.</DialogDescription>
+            <DialogTitle>{t('mobile.renameDevice')}</DialogTitle>
+            <DialogDescription>{t('mobile.renameDeviceDesc')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="device-name">Device name</Label>
+              <Label htmlFor="device-name">{t('mobile.deviceName')}</Label>
               <Input
                 id="device-name"
                 value={editDeviceName}
                 onChange={(e) => setEditDeviceName(e.target.value)}
-                placeholder="e.g. iPhone 15"
+                placeholder={t('mobile.deviceNamePlaceholder')}
                 maxLength={100}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
-              Cancel
+              {t('common:actions.cancel')}
             </Button>
             <Button
               onClick={() => {
@@ -135,10 +137,10 @@ function MobileSessionCard({ session }: { session: MobileSession }) {
               {updateSession.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {t('common:states.saving')}
                 </>
               ) : (
-                'Save'
+                t('common:actions.save')
               )}
             </Button>
           </DialogFooter>
@@ -148,9 +150,9 @@ function MobileSessionCard({ session }: { session: MobileSession }) {
       <ConfirmDialog
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
-        title="Remove Device"
-        description={`Are you sure you want to remove ${session.deviceName}? This device will need to pair again to reconnect.`}
-        confirmLabel="Remove"
+        title={t('mobile.removeDevice')}
+        description={t('mobile.removeDeviceConfirm', { deviceName: session.deviceName })}
+        confirmLabel={t('common:actions.remove')}
         onConfirm={() => {
           revokeSession.mutate(session.id);
           setShowDeleteConfirm(false);
@@ -162,6 +164,7 @@ function MobileSessionCard({ session }: { session: MobileSession }) {
 }
 
 export function MobileSettings() {
+  const { t } = useTranslation(['settings', 'common', 'notifications']);
   const { data: config, isLoading } = useMobileConfig();
   const { data: settings } = useSettings();
   const enableMobile = useEnableMobile();
@@ -208,7 +211,7 @@ export function MobileSettings() {
         setShowQRDialog(true);
       } else {
         console.error('Invalid token response:', token);
-        toast.error('Failed to Generate Token', {
+        toast.error(t('mobile.failedToGenerateToken'), {
           description: 'Received invalid token data from server.',
         });
       }
@@ -224,9 +227,11 @@ export function MobileSettings() {
         await navigator.clipboard.writeText(pairToken.token);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-        toast.success('Token Copied', { description: 'Pair token copied to clipboard.' });
+        toast.success(t('notifications:toast.success.tokenCopied.title'), {
+          description: t('notifications:toast.success.tokenCopied.message'),
+        });
       } catch {
-        toast.error('Failed to Copy', { description: 'Could not copy token to clipboard.' });
+        toast.error(t('notifications:toast.error.copyFailed'));
       }
     }
   };
@@ -292,9 +297,9 @@ export function MobileSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
-            Get the App
+            {t('mobile.getTheApp')}
           </CardTitle>
-          <CardDescription>Download the Tracearr mobile app for iOS or Android</CardDescription>
+          <CardDescription>{t('mobile.getTheAppDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-center gap-4">
@@ -306,7 +311,7 @@ export function MobileSettings() {
             >
               <img
                 src={`${BASE_URL}images/store-badges/google-play.svg`}
-                alt="Get it on Google Play"
+                alt={t('mobile.getOnGooglePlay')}
                 height={40}
                 className="h-[40px] w-auto"
               />
@@ -319,7 +324,7 @@ export function MobileSettings() {
             >
               <img
                 src={`${BASE_URL}images/store-badges/app-store.svg`}
-                alt="Download on the App Store"
+                alt={t('mobile.downloadOnAppStore')}
                 height={40}
                 className="h-[40px] w-auto"
               />
@@ -333,22 +338,20 @@ export function MobileSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Smartphone className="h-5 w-5" />
-            Pair Your Device
+            {t('mobile.pairYourDevice')}
           </CardTitle>
-          <CardDescription>
-            Connect the Tracearr mobile app to monitor your servers on the go
-          </CardDescription>
+          <CardDescription>{t('mobile.pairYourDeviceDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {!settings?.externalUrl && (
             <div className="flex items-start gap-2 rounded-lg bg-blue-500/10 p-3 text-sm text-blue-600 dark:text-blue-400">
               <Info className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
-                Using a reverse proxy or accessing remotely? Set your{' '}
+                {t('mobile.externalUrlBanner')}{' '}
                 <NavLink to="/settings" className="font-medium underline underline-offset-2">
-                  External URL
+                  {t('mobile.externalUrlBannerLink')}
                 </NavLink>{' '}
-                so the mobile app can connect to your server.
+                {t('mobile.externalUrlBannerSuffix')}
               </span>
             </div>
           )}
@@ -358,19 +361,19 @@ export function MobileSettings() {
                 <Smartphone className="text-muted-foreground h-8 w-8" />
               </div>
               <div className="text-center">
-                <h3 className="font-semibold">Mobile Access Disabled</h3>
+                <h3 className="font-semibold">{t('mobile.mobileAccessDisabled')}</h3>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Enable mobile access to connect the Tracearr app to your server
+                  {t('mobile.mobileAccessDisabledDesc')}
                 </p>
               </div>
               <Button onClick={() => enableMobile.mutate()} disabled={enableMobile.isPending}>
                 {enableMobile.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enabling...
+                    {t('mobile.enabling')}
                   </>
                 ) : (
-                  'Enable Mobile Access'
+                  t('mobile.enableMobileAccess')
                 )}
               </Button>
             </div>
@@ -379,12 +382,11 @@ export function MobileSettings() {
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-muted-foreground text-sm">
-                    {deviceCount} of {maxDevices} devices connected
+                    {t('mobile.devicesConnected', { current: deviceCount, max: maxDevices })}
                   </p>
                   {config.pendingTokens > 0 && (
                     <p className="text-muted-foreground text-xs">
-                      {config.pendingTokens} pending token
-                      {config.pendingTokens !== 1 ? 's' : ''} awaiting pairing
+                      {t('mobile.pendingTokens', { count: config.pendingTokens })}
                     </p>
                   )}
                 </div>
@@ -397,13 +399,13 @@ export function MobileSettings() {
                   ) : (
                     <Plus className="mr-2 h-4 w-4" />
                   )}
-                  Add Device
+                  {t('mobile.addDevice')}
                 </Button>
               </div>
 
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={() => setShowDisableConfirm(true)}>
-                  Disable Mobile Access
+                  {t('mobile.disableMobileAccess')}
                 </Button>
               </div>
             </>
@@ -418,15 +420,15 @@ export function MobileSettings() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Smartphone className="h-5 w-5" />
-                  Connected Devices
+                  {t('mobile.connectedDevices')}
                 </CardTitle>
                 <CardDescription>
-                  {config.sessions.length} device{config.sessions.length !== 1 ? 's' : ''} connected
+                  {t('mobile.connectedDevicesDesc', { count: config.sessions.length })}
                 </CardDescription>
               </div>
               <Button variant="outline" size="sm" onClick={() => setShowRevokeConfirm(true)}>
                 <LogOut className="mr-2 h-4 w-4" />
-                Revoke All
+                {t('mobile.revokeAllSessions')}
               </Button>
             </div>
           </CardHeader>
@@ -450,10 +452,8 @@ export function MobileSettings() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Pair New Device</DialogTitle>
-            <DialogDescription>
-              Scan the QR code with the Tracearr mobile app to pair your device.
-            </DialogDescription>
+            <DialogTitle>{t('mobile.pairNewDevice')}</DialogTitle>
+            <DialogDescription>{t('mobile.pairNewDeviceDesc')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {pairToken && (
@@ -465,20 +465,20 @@ export function MobileSettings() {
                   {timeLeft !== null && (
                     <div className="text-muted-foreground flex items-center gap-2 text-sm">
                       <Clock className="h-4 w-4" />
-                      <span>Expires in {formatTimeLeft(timeLeft)}</span>
+                      <span>{t('mobile.expiresIn', { time: formatTimeLeft(timeLeft) })}</span>
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>One-Time Pair Token</Label>
+                  <Label>{t('mobile.oneTimePairToken')}</Label>
                   <div className="flex gap-2">
                     <Input readOnly value={pairToken.token} className="font-mono text-xs" />
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={handleCopyToken}
-                      title="Copy token"
+                      title={t('mobile.copyToken')}
                     >
                       {copied ? (
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -487,9 +487,7 @@ export function MobileSettings() {
                       )}
                     </Button>
                   </div>
-                  <p className="text-muted-foreground text-xs">
-                    This token expires in 5 minutes and can only be used once.
-                  </p>
+                  <p className="text-muted-foreground text-xs">{t('mobile.tokenExpiryNote')}</p>
                 </div>
               </>
             )}
@@ -501,7 +499,7 @@ export function MobileSettings() {
                 setPairToken(null);
               }}
             >
-              Done
+              {t('mobile.done')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -511,9 +509,9 @@ export function MobileSettings() {
       <ConfirmDialog
         open={showDisableConfirm}
         onOpenChange={setShowDisableConfirm}
-        title="Disable Mobile Access"
-        description="Are you sure you want to disable mobile access? All connected devices will be disconnected and will need to be re-paired when you re-enable."
-        confirmLabel="Disable"
+        title={t('mobile.disableMobileAccess')}
+        description={t('mobile.disableMobileAccessConfirm')}
+        confirmLabel={t('mobile.disable')}
         onConfirm={() => {
           disableMobile.mutate();
           setShowDisableConfirm(false);
@@ -524,9 +522,9 @@ export function MobileSettings() {
       <ConfirmDialog
         open={showRevokeConfirm}
         onOpenChange={setShowRevokeConfirm}
-        title="Revoke All Sessions"
-        description="Are you sure you want to disconnect all mobile devices? They will need to pair with a new token to reconnect."
-        confirmLabel="Revoke All"
+        title={t('mobile.revokeAll')}
+        description={t('mobile.revokeAllConfirm')}
+        confirmLabel={t('mobile.revokeAllSessions')}
         onConfirm={() => {
           revokeMobileSessions.mutate();
           setShowRevokeConfirm(false);

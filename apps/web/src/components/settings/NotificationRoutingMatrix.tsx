@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Info } from 'lucide-react';
 import type { NotificationChannelRouting, NotificationEventType } from '@tracearr/shared';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,41 +14,6 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useChannelRouting, useUpdateChannelRouting } from '@/hooks/queries';
-
-// Display names and descriptions for event types
-// Note: concurrent_streams excluded - it's a rule type, covered by violation_detected
-const EVENT_CONFIG: Partial<Record<NotificationEventType, { name: string; description: string }>> =
-  {
-    violation_detected: {
-      name: 'Rule Violation',
-      description:
-        'A user triggered a rule violation (e.g., concurrent streams, impossible travel)',
-    },
-    new_device: {
-      name: 'New Device',
-      description: 'A user logged in from a new device for the first time',
-    },
-    trust_score_changed: {
-      name: 'Trust Score Changed',
-      description: "A user's trust score changed significantly",
-    },
-    stream_started: {
-      name: 'Stream Started',
-      description: 'A user started watching content',
-    },
-    stream_stopped: {
-      name: 'Stream Stopped',
-      description: 'A user stopped watching content',
-    },
-    server_down: {
-      name: 'Server Offline',
-      description: 'A media server became unreachable',
-    },
-    server_up: {
-      name: 'Server Online',
-      description: 'A media server came back online',
-    },
-  };
 
 // Order of events in the table (security first, then streams, then server)
 // concurrent_streams excluded - it's a rule type, violations cover it
@@ -69,8 +36,44 @@ export function NotificationRoutingMatrix({
   discordConfigured,
   webhookConfigured,
 }: NotificationRoutingMatrixProps) {
+  const { t } = useTranslation(['settings', 'notifications', 'common']);
   const { data: routingData, isLoading } = useChannelRouting();
   const updateRouting = useUpdateChannelRouting();
+
+  // Display names and descriptions for event types, translated
+  const EVENT_CONFIG = useMemo(
+    (): Partial<Record<NotificationEventType, { name: string; description: string }>> => ({
+      violation_detected: {
+        name: t('notifications:settings.violationDetected'),
+        description: t('notifications:settings.violationDetectedDesc'),
+      },
+      new_device: {
+        name: t('notifications:settings.newDevice'),
+        description: t('notifications:settings.newDeviceDesc'),
+      },
+      trust_score_changed: {
+        name: t('notifications:settings.trustScoreChanged'),
+        description: t('notifications:settings.trustScoreChangedDesc'),
+      },
+      stream_started: {
+        name: t('notifications:settings.streamStarted'),
+        description: t('notifications:settings.streamStartedDesc'),
+      },
+      stream_stopped: {
+        name: t('notifications:settings.streamStopped'),
+        description: t('notifications:settings.streamStoppedDesc'),
+      },
+      server_down: {
+        name: t('notifications:settings.serverDown'),
+        description: t('notifications:settings.serverDownDesc'),
+      },
+      server_up: {
+        name: t('notifications:settings.serverUp'),
+        description: t('notifications:settings.serverUpDesc'),
+      },
+    }),
+    [t]
+  );
 
   // Build a map for quick lookup
   const routingMap = new Map<NotificationEventType, NotificationChannelRouting>();
@@ -107,13 +110,19 @@ export function NotificationRoutingMatrix({
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead className="px-4 py-3">Event</TableHead>
-                <TableHead className="w-24 px-4 py-3 text-center">Web</TableHead>
+                <TableHead className="px-4 py-3">{t('notifications.routing.event')}</TableHead>
+                <TableHead className="w-24 px-4 py-3 text-center">
+                  {t('notifications.routing.web')}
+                </TableHead>
                 {discordConfigured && (
-                  <TableHead className="w-24 px-4 py-3 text-center">Discord</TableHead>
+                  <TableHead className="w-24 px-4 py-3 text-center">
+                    {t('notifications.routing.discord')}
+                  </TableHead>
                 )}
                 {webhookConfigured && (
-                  <TableHead className="w-24 px-4 py-3 text-center">Webhook</TableHead>
+                  <TableHead className="w-24 px-4 py-3 text-center">
+                    {t('notifications.routing.webhook')}
+                  </TableHead>
                 )}
               </TableRow>
             </TableHeader>
@@ -179,8 +188,8 @@ export function NotificationRoutingMatrix({
         <div className="text-muted-foreground flex items-start gap-2 text-sm">
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            <strong>Web</strong> shows toast notifications in this browser. Push notifications are
-            configured per-device in the mobile app.
+            <strong>{t('notifications.routing.web')}</strong>{' '}
+            {t('notifications.routing.webToastNote')} {t('notifications.routing.webNote')}
           </span>
         </div>
       </div>
