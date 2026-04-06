@@ -44,6 +44,7 @@ import { TasksTab } from '@/components/debug/TasksTab';
 import { toast } from 'sonner';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface DebugStats {
   counts: {
@@ -137,11 +138,8 @@ const formatBytes = (bytes: string | number) => {
   return `${parseFloat((num / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 };
 
-const NON_SUPERVISED_MESSAGE =
-  "You're running Tracearr in non-supervised mode. Log explorer is not available. " +
-  'Logs can be viewed by inspecting each container directly (for example, docker logs <container_name>).';
-
 export function Debug() {
+  const { t } = useTranslation(['pages', 'common']);
   const queryClient = useQueryClient();
   const version = useVersion();
   const isSupervised = Boolean(version.data?.current.tag?.toLowerCase().includes('supervised'));
@@ -334,7 +332,7 @@ export function Debug() {
     () => [
       {
         accessorKey: 'snapshot_time',
-        header: 'Date',
+        header: t('common:labels.date'),
         cell: ({ row }) => {
           const date = new Date(row.original.snapshot_time);
           return (
@@ -350,7 +348,7 @@ export function Debug() {
       },
       {
         accessorKey: 'server_name',
-        header: 'Server',
+        header: t('common:labels.server'),
         cell: ({ row }) => <span className="text-xs">{row.original.server_name || 'Unknown'}</span>,
       },
       {
@@ -364,26 +362,26 @@ export function Debug() {
       },
       {
         accessorKey: 'is_suspicious',
-        header: 'Status',
+        header: t('common:labels.status'),
         cell: ({ row }) =>
           row.original.is_suspicious ? (
             <Badge variant="outline" className="border-amber-500/30 text-xs text-amber-600">
-              Suspicious
+              {t('debug.suspicious')}
             </Badge>
           ) : (
-            <span className="text-muted-foreground text-xs">OK</span>
+            <span className="text-muted-foreground text-xs">{t('debug.ok')}</span>
           ),
       },
       {
         accessorKey: 'item_count',
-        header: 'Items',
+        header: t('common:labels.items'),
         cell: ({ row }) => (
           <span className="text-xs">{row.original.item_count.toLocaleString()}</span>
         ),
       },
       {
         accessorKey: 'total_size',
-        header: 'Size',
+        header: t('common:labels.size'),
         cell: ({ row }) => <span className="text-xs">{formatBytes(row.original.total_size)}</span>,
         sortingFn: (rowA, rowB) => {
           const a = parseInt(String(rowA.original.total_size), 10) || 0;
@@ -393,7 +391,7 @@ export function Debug() {
       },
       {
         id: 'content',
-        header: 'Content',
+        header: t('common:labels.content'),
         cell: ({ row }) => {
           const { movie_count, episode_count, music_count } = row.original;
           const parts: string[] = [];
@@ -405,7 +403,7 @@ export function Debug() {
         enableSorting: false,
       },
     ],
-    []
+    [t]
   );
 
   return (
@@ -416,19 +414,17 @@ export function Debug() {
           <AlertTriangle className="text-destructive h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold">Debug Tools</h1>
-          <p className="text-muted-foreground text-sm">
-            Administrative utilities for troubleshooting and data management
-          </p>
+          <h1 className="text-2xl font-bold">{t('debug.title')}</h1>
+          <p className="text-muted-foreground text-sm">{t('debug.description')}</p>
         </div>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="snapshots">Library Snapshots</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="logs">Logs</TabsTrigger>
+          <TabsTrigger value="overview">{t('debug.overview')}</TabsTrigger>
+          <TabsTrigger value="snapshots">{t('debug.librarySnapshots')}</TabsTrigger>
+          <TabsTrigger value="tasks">{t('debug.tasks')}</TabsTrigger>
+          <TabsTrigger value="logs">{t('debug.logs')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -439,7 +435,7 @@ export function Debug() {
                 <Film className="text-muted-foreground h-8 w-8" />
                 <div>
                   <p className="text-2xl font-bold">{stats.data?.counts.sessions ?? '-'}</p>
-                  <p className="text-muted-foreground text-xs">Sessions</p>
+                  <p className="text-muted-foreground text-xs">{t('common:labels.sessions')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -448,7 +444,7 @@ export function Debug() {
                 <Shield className="text-muted-foreground h-8 w-8" />
                 <div>
                   <p className="text-2xl font-bold">{stats.data?.counts.violations ?? '-'}</p>
-                  <p className="text-muted-foreground text-xs">Violations</p>
+                  <p className="text-muted-foreground text-xs">{t('violations.title')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -457,7 +453,7 @@ export function Debug() {
                 <Scale className="text-muted-foreground h-8 w-8" />
                 <div>
                   <p className="text-2xl font-bold">{stats.data?.counts.rules ?? '-'}</p>
-                  <p className="text-muted-foreground text-xs">Rules</p>
+                  <p className="text-muted-foreground text-xs">{t('rules.title')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -466,7 +462,7 @@ export function Debug() {
                 <Users className="text-muted-foreground h-8 w-8" />
                 <div>
                   <p className="text-2xl font-bold">{stats.data?.counts.users ?? '-'}</p>
-                  <p className="text-muted-foreground text-xs">Users</p>
+                  <p className="text-muted-foreground text-xs">{t('users.title')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -484,7 +480,7 @@ export function Debug() {
                 <Link2 className="text-muted-foreground h-8 w-8" />
                 <div>
                   <p className="text-2xl font-bold">{stats.data?.counts.plexAccounts ?? '-'}</p>
-                  <p className="text-muted-foreground text-xs">Plex Accounts</p>
+                  <p className="text-muted-foreground text-xs">{t('debug.plexAccounts')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -493,7 +489,7 @@ export function Debug() {
                 <XSquare className="text-muted-foreground h-8 w-8" />
                 <div>
                   <p className="text-2xl font-bold">{stats.data?.counts.terminationLogs ?? '-'}</p>
-                  <p className="text-muted-foreground text-xs">Terminations</p>
+                  <p className="text-muted-foreground text-xs">{t('debug.terminations')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -502,7 +498,7 @@ export function Debug() {
                 <Library className="text-muted-foreground h-8 w-8" />
                 <div>
                   <p className="text-2xl font-bold">{stats.data?.counts.libraryItems ?? '-'}</p>
-                  <p className="text-muted-foreground text-xs">Library Items</p>
+                  <p className="text-muted-foreground text-xs">{t('debug.libraryItems')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -522,9 +518,9 @@ export function Debug() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Info className="h-5 w-5" />
-                Environment
+                {t('debug.environment')}
               </CardTitle>
-              <CardDescription>Server runtime information</CardDescription>
+              <CardDescription>{t('debug.systemInformation')}</CardDescription>
             </CardHeader>
             <CardContent>
               {envInfo.data && (
@@ -632,11 +628,9 @@ export function Debug() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Database className="h-5 w-5" />
-                Database Storage
+                {t('debug.database')}
               </CardTitle>
-              <CardDescription>
-                Storage usage by table type ({stats.data?.database.size ?? '-'} total)
-              </CardDescription>
+              <CardDescription>{t('debug.databaseDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-6 lg:grid-cols-2">
@@ -687,9 +681,9 @@ export function Debug() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Trash2 className="h-5 w-5" />
-                Data Management
+                {t('debug.maintenance')}
               </CardTitle>
-              <CardDescription>Clear data or reset the application</CardDescription>
+              <CardDescription>{t('debug.destructiveActions')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Utility Actions */}
@@ -702,7 +696,7 @@ export function Debug() {
                   disabled={deleteMutation.isPending}
                 >
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh Aggregates
+                  {t('debug.refreshAggregates')}
                 </Button>
                 <Button
                   variant="outline"
@@ -712,7 +706,7 @@ export function Debug() {
                   disabled={deleteMutation.isPending}
                 >
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  Clear Stuck Jobs
+                  {t('debug.clearStuckJobs')}
                 </Button>
                 <Button
                   variant="outline"
@@ -727,11 +721,11 @@ export function Debug() {
                   disabled={deleteMutation.isPending}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Obliterate All Jobs
+                  {t('debug.obliterateAllJobs')}
                 </Button>
                 <Button variant="outline" onClick={() => queryClient.invalidateQueries()}>
                   <RotateCcw className="mr-2 h-4 w-4" />
-                  Clear Query Cache
+                  {t('debug.clearQueryCache')}
                 </Button>
                 <Button
                   variant="outline"
@@ -745,13 +739,13 @@ export function Debug() {
                   disabled={deleteMutation.isPending}
                 >
                   <Smartphone className="mr-2 h-4 w-4" />
-                  Clear Mobile Devices
+                  {t('debug.clearMobileDevices')}
                 </Button>
               </div>
 
               <div className="border-t pt-4">
                 <p className="text-muted-foreground mb-3 text-sm font-medium">
-                  Destructive Actions
+                  {t('debug.destructiveActions')}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -759,7 +753,7 @@ export function Debug() {
                     onClick={() => handleDelete('violations', 'Delete all violation records')}
                     disabled={deleteMutation.isPending}
                   >
-                    Clear Violations
+                    {t('debug.clearViolations')}
                   </Button>
                   <Button
                     variant="outline"
@@ -768,7 +762,7 @@ export function Debug() {
                     }
                     disabled={deleteMutation.isPending}
                   >
-                    Clear Rules
+                    {t('debug.clearRules')}
                   </Button>
                   <Button
                     variant="outline"
@@ -777,7 +771,7 @@ export function Debug() {
                     }
                     disabled={deleteMutation.isPending}
                   >
-                    Clear Termination Logs
+                    {t('debug.clearTerminationLogs')}
                   </Button>
                   <Button
                     variant="outline"
@@ -789,7 +783,7 @@ export function Debug() {
                     }
                     disabled={deleteMutation.isPending}
                   >
-                    Clear Library Cache
+                    {t('debug.clearLibraryCache')}
                   </Button>
                   <Button
                     variant="outline"
@@ -802,7 +796,7 @@ export function Debug() {
                     }
                     disabled={deleteMutation.isPending}
                   >
-                    Clear Sessions
+                    {t('debug.clearSessions')}
                   </Button>
                   <Button
                     variant="outline"
@@ -812,7 +806,7 @@ export function Debug() {
                     }
                     disabled={deleteMutation.isPending}
                   >
-                    Clear Users
+                    {t('debug.clearUsers')}
                   </Button>
                   <Button
                     variant="outline"
@@ -825,7 +819,7 @@ export function Debug() {
                     }
                     disabled={deleteMutation.isPending}
                   >
-                    Clear Servers
+                    {t('debug.clearServers')}
                   </Button>
                 </div>
               </div>
@@ -843,7 +837,7 @@ export function Debug() {
                   disabled={deleteMutation.isPending}
                 >
                   <AlertTriangle className="mr-2 h-4 w-4" />
-                  Factory Reset
+                  {t('debug.factoryReset')}
                 </Button>
               </div>
             </CardContent>
@@ -858,11 +852,9 @@ export function Debug() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Camera className="h-5 w-5" />
-                    Library Snapshots
+                    {t('debug.librarySnapshots')}
                   </CardTitle>
-                  <CardDescription>
-                    Manage library snapshots used for Storage Trend and Quality Evolution charts
-                  </CardDescription>
+                  <CardDescription>{t('debug.manageSnapshots')}</CardDescription>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
@@ -872,7 +864,7 @@ export function Debug() {
                       onCheckedChange={setShowSuspiciousOnly}
                     />
                     <Label htmlFor="suspicious-only" className="text-sm">
-                      Suspicious only
+                      {t('debug.suspiciousOnly')}
                     </Label>
                   </div>
                   <Button
@@ -885,7 +877,7 @@ export function Debug() {
                     <RefreshCw
                       className={cn('h-3.5 w-3.5', isLoadingSnapshots && 'animate-spin')}
                     />
-                    Load
+                    {t('debug.load')}
                   </Button>
                 </div>
               </div>
@@ -896,8 +888,8 @@ export function Debug() {
                   <Camera className="text-muted-foreground h-4 w-4" />
                   <p className="text-muted-foreground text-xs">
                     {showSuspiciousOnly
-                      ? 'No suspicious snapshots found'
-                      : 'Click "Load" to view snapshots'}
+                      ? t('debug.noSuspiciousSnapshots')
+                      : t('debug.clickLoadToView')}
                   </p>
                 </div>
               ) : (
@@ -906,8 +898,8 @@ export function Debug() {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground text-sm">
                       {selectedSnapshots.size > 0
-                        ? `${selectedSnapshots.size} of ${snapshots.length} selected`
-                        : `${snapshots.length} snapshot(s)`}
+                        ? `${selectedSnapshots.size} ${t('debug.of')} ${snapshots.length} ${t('debug.selected')}`
+                        : `${snapshots.length} ${t('debug.snapshots')}`}
                     </span>
                     <div className="flex gap-2">
                       {selectedSnapshots.size > 0 && (
@@ -922,7 +914,7 @@ export function Debug() {
                           ) : (
                             <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                           )}
-                          Delete Selected
+                          {t('debug.deleteSelected')}
                         </Button>
                       )}
                       {showSuspiciousOnly &&
@@ -939,7 +931,7 @@ export function Debug() {
                             ) : (
                               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                             )}
-                            Delete All Suspicious
+                            {t('debug.deleteAllSuspicious')}
                           </Button>
                         )}
                     </div>
@@ -954,8 +946,8 @@ export function Debug() {
                     isLoading={isLoadingSnapshots}
                     emptyMessage={
                       showSuspiciousOnly
-                        ? 'No suspicious snapshots found'
-                        : 'Click "Load" to view snapshots'
+                        ? t('debug.noSuspiciousSnapshots')
+                        : t('debug.clickLoadToView')
                     }
                     selectable
                     getRowId={(row) => row.id}
@@ -1010,7 +1002,7 @@ export function Debug() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Log Explorer
+                {t('debug.logs')}
               </CardTitle>
               <CardDescription>Supervised deployment logs</CardDescription>
             </CardHeader>
@@ -1018,7 +1010,9 @@ export function Debug() {
               {version.isLoading ? (
                 <div className="text-muted-foreground text-sm">Checking deployment mode...</div>
               ) : !isSupervised ? (
-                <div className="text-muted-foreground text-sm">{NON_SUPERVISED_MESSAGE}</div>
+                <div className="text-muted-foreground text-sm">
+                  {t('debug.logExplorerUnavailable')}
+                </div>
               ) : (
                 <>
                   <div className="flex flex-wrap gap-2">
@@ -1111,7 +1105,7 @@ export function Debug() {
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setConfirmDeleteSnapshots(false)}>
-              Cancel
+              {t('common:actions.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -1122,7 +1116,7 @@ export function Debug() {
               }
             >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-              Delete
+              {t('common:actions.delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

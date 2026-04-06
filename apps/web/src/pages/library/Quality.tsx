@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Film, Tv } from 'lucide-react';
 import { TimeRangePicker } from '@/components/ui/time-range-picker';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,7 @@ import { useTimeRange } from '@/hooks/useTimeRange';
 type MediaTypeFilter = 'all' | 'movies' | 'shows';
 
 export function LibraryQuality() {
+  const { t } = useTranslation(['pages', 'common']);
   const { selectedServerId } = useServer();
   const { value: timeRange, setValue: setTimeRange } = useTimeRange();
   const [mediaType, setMediaType] = useState<MediaTypeFilter>('all');
@@ -45,8 +47,8 @@ export function LibraryQuality() {
   // Header component (used in all states)
   const header = (
     <div>
-      <h1 className="text-2xl font-bold">Quality</h1>
-      <p className="text-muted-foreground text-sm">Resolution and codec distribution</p>
+      <h1 className="text-2xl font-bold">{t('library.quality.title')}</h1>
+      <p className="text-muted-foreground text-sm">{t('library.quality.description')}</p>
     </div>
   );
 
@@ -56,8 +58,8 @@ export function LibraryQuality() {
       <div className="space-y-6">
         {header}
         <ErrorState
-          title="Failed to load quality data"
-          message={quality.error?.message ?? 'Could not fetch quality data. Please try again.'}
+          title={t('library.quality.failedToLoad')}
+          message={quality.error?.message ?? t('library.quality.failedToLoadDesc')}
           onRetry={quality.refetch}
         />
       </div>
@@ -86,19 +88,21 @@ export function LibraryQuality() {
         <CardHeader className="pb-2">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <CardTitle className="text-base font-medium">Quality Evolution</CardTitle>
+              <CardTitle className="text-base font-medium">
+                {t('library.quality.qualityEvolution')}
+              </CardTitle>
               <Tabs value={mediaType} onValueChange={(v) => setMediaType(v as MediaTypeFilter)}>
                 <TabsList className="h-8">
                   <TabsTrigger value="all" className="h-7 px-3 text-xs">
-                    All
+                    {t('library.quality.all')}
                   </TabsTrigger>
                   <TabsTrigger value="movies" className="h-7 gap-1 px-3 text-xs">
                     <Film className="h-3 w-3" />
-                    Movies
+                    {t('common:media.movie_plural')}
                   </TabsTrigger>
                   <TabsTrigger value="shows" className="h-7 gap-1 px-3 text-xs">
                     <Tv className="h-3 w-3" />
-                    TV
+                    {t('common:media.tv')}
                   </TabsTrigger>
                 </TabsList>
               </Tabs>

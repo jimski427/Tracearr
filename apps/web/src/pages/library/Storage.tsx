@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HardDrive, TrendingUp, Copy, Archive } from 'lucide-react';
 import { StatCard } from '@/components/ui/stat-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,7 @@ import { useTimeRange } from '@/hooks/useTimeRange';
 import { formatBytes } from '@/lib/formatters';
 
 export function LibraryStorage() {
+  const { t } = useTranslation(['pages', 'common']);
   const { selectedServerId, servers } = useServer();
   const { value: timeRange, setValue: setTimeRange } = useTimeRange();
 
@@ -92,19 +94,19 @@ export function LibraryStorage() {
     storage.data.predictions.currentDataDays < (storage.data.predictions.minDataDays ?? 7);
   const growthBytes = Number(storage.data?.growthRate?.bytesPerMonth ?? 0);
   const growthRateDisplay = insufficientData
-    ? 'Insufficient data'
+    ? t('library.storage.insufficientData')
     : growthBytes > 0
       ? `+${formatBytes(storage.data?.growthRate.bytesPerMonth)}/mo`
-      : '0 GB/mo';
+      : t('library.storage.zeroGrowth');
   const growthRateSubValue = insufficientData
-    ? `${storage.data?.predictions.currentDataDays} of ${storage.data?.predictions.minDataDays} days`
+    ? `${storage.data?.predictions.currentDataDays} ${t('library.storage.of')} ${storage.data?.predictions.minDataDays} ${t('library.storage.days')}`
     : undefined;
 
   // Header component (used in all states)
   const header = (
     <div>
-      <h1 className="text-2xl font-bold">Storage</h1>
-      <p className="text-muted-foreground text-sm">Storage usage, predictions, and optimization</p>
+      <h1 className="text-2xl font-bold">{t('library.storage.title')}</h1>
+      <p className="text-muted-foreground text-sm">{t('library.storage.description')}</p>
     </div>
   );
 
@@ -114,8 +116,8 @@ export function LibraryStorage() {
       <div className="space-y-6">
         {header}
         <ErrorState
-          title="Failed to load storage data"
-          message={storage.error?.message ?? 'Could not fetch storage data. Please try again.'}
+          title={t('library.storage.failedToLoad')}
+          message={storage.error?.message ?? t('library.storage.failedToLoadDesc')}
           onRetry={storage.refetch}
         />
       </div>
@@ -143,29 +145,29 @@ export function LibraryStorage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard
           icon={HardDrive}
-          label="Total Storage"
+          label={t('library.storage.totalStorage')}
           value={formatBytes(storage.data?.current.totalSizeBytes)}
           isLoading={storage.isLoading}
         />
         <StatCard
           icon={TrendingUp}
-          label="Growth Rate"
+          label={t('library.storage.growthRate')}
           value={growthRateDisplay}
           subValue={growthRateSubValue}
           isLoading={storage.isLoading}
         />
         <StatCard
           icon={Copy}
-          label="Duplicates"
-          value={`${duplicates.data?.summary.totalGroups ?? 0} groups`}
-          subValue={`${formatBytes(duplicates.data?.summary.totalPotentialSavingsBytes ?? 0)} recoverable`}
+          label={t('library.storage.duplicates')}
+          value={`${duplicates.data?.summary.totalGroups ?? 0} ${t('library.storage.groups')}`}
+          subValue={`${formatBytes(duplicates.data?.summary.totalPotentialSavingsBytes ?? 0)} ${t('library.storage.recoverable')}`}
           isLoading={duplicates.isLoading}
         />
         <StatCard
           icon={Archive}
-          label="Stale Content"
-          value={`${staleCount} items`}
-          subValue={`${formatBytes(staleSizeBytes)} unused`}
+          label={t('library.storage.staleContent')}
+          value={`${staleCount} ${t('library.storage.items')}`}
+          subValue={`${formatBytes(staleSizeBytes)} ${t('library.storage.unused')}`}
           isLoading={staleSummary.isLoading}
         />
       </div>
@@ -175,7 +177,9 @@ export function LibraryStorage() {
         <CardHeader className="pb-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-3">
-              <CardTitle className="text-base font-medium">Storage Trend</CardTitle>
+              <CardTitle className="text-base font-medium">
+                {t('library.storage.storageTrend')}
+              </CardTitle>
               {showPredictions && storage.data?.predictions.confidence && (
                 <Badge
                   variant={
@@ -186,9 +190,13 @@ export function LibraryStorage() {
                         : 'secondary'
                   }
                 >
-                  {storage.data.predictions.confidence.charAt(0).toUpperCase() +
-                    storage.data.predictions.confidence.slice(1)}{' '}
-                  Confidence
+                  {{
+                    high: t('library.storage.confidenceHigh'),
+                    medium: t('library.storage.confidenceMedium'),
+                    low: t('library.storage.confidenceLow'),
+                  }[storage.data.predictions.confidence] ??
+                    storage.data.predictions.confidence}{' '}
+                  {t('library.storage.confidence')}
                 </Badge>
               )}
             </div>
@@ -200,7 +208,7 @@ export function LibraryStorage() {
                   onCheckedChange={setShowPredictions}
                 />
                 <Label htmlFor="show-predictions" className="text-sm">
-                  Predictions
+                  {t('library.storage.predictions')}
                 </Label>
               </div>
               <TimeRangePicker value={timeRange} onChange={setTimeRange} />
@@ -240,10 +248,10 @@ export function LibraryStorage() {
       {/* Stale Content Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base font-medium">Stale Content</CardTitle>
-          <p className="text-muted-foreground text-sm">
-            Content that may be candidates for removal
-          </p>
+          <CardTitle className="text-base font-medium">
+            {t('library.storage.staleContent')}
+          </CardTitle>
+          <p className="text-muted-foreground text-sm">{t('library.storage.staleContentDesc')}</p>
         </CardHeader>
         <CardContent>
           <StaleContentTabs serverId={selectedServerId} libraryId={null} />
@@ -255,15 +263,19 @@ export function LibraryStorage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-base font-medium">Content ROI</CardTitle>
-              <p className="text-muted-foreground text-sm">Watch value per storage cost</p>
+              <CardTitle className="text-base font-medium">
+                {t('library.storage.contentROI')}
+              </CardTitle>
+              <p className="text-muted-foreground text-sm">{t('library.storage.contentROIDesc')}</p>
             </div>
             {roi.data?.summary && (
               <div className="text-right">
                 <p className="text-2xl font-bold">
                   {roi.data.summary.avgWatchHoursPerGb.toFixed(2)}
                 </p>
-                <p className="text-muted-foreground text-sm">avg hours/GB</p>
+                <p className="text-muted-foreground text-sm">
+                  {t('library.storage.avgHoursPerGB')}
+                </p>
               </div>
             )}
           </div>

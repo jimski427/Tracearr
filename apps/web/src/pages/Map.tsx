@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
 import { StreamMap } from '@/components/map';
 import {
@@ -16,16 +17,21 @@ import { useLocationStats } from '@/hooks/queries';
 import { useServer } from '@/hooks/useServer';
 import { useTimeRange } from '@/hooks/useTimeRange';
 
-const MEDIA_TYPES = [
-  { value: 'movie', label: 'Movies' },
-  { value: 'episode', label: 'TV' },
-  { value: 'track', label: 'Music' },
-] as const;
-
 export function Map() {
+  const { t } = useTranslation(['pages', 'common']);
   const [searchParams, setSearchParams] = useSearchParams();
   const { value: timeRange, setValue: setTimeRange } = useTimeRange();
   const { selectedServerId } = useServer();
+
+  const MEDIA_TYPES = useMemo(
+    () =>
+      [
+        { value: 'movie', label: t('common:media.movie_plural') },
+        { value: 'episode', label: t('common:media.tv') },
+        { value: 'track', label: t('common:media.music') },
+      ] as const,
+    [t]
+  );
 
   // Parse filters from URL, use selected server from context
   const filters = useMemo(() => {
@@ -108,8 +114,8 @@ export function Map() {
     const parts: string[] = [];
     if (selectedUser) parts.push(selectedUser.identityName ?? selectedUser.username);
     if (selectedMediaType) parts.push(selectedMediaType.label);
-    return parts.join(' · ') || 'All activity';
-  }, [selectedUser, selectedMediaType]);
+    return parts.join(' · ') || t('map.allActivity');
+  }, [selectedUser, selectedMediaType, t]);
 
   return (
     <div className="-m-6 flex h-[calc(100vh-4rem)] flex-col">
@@ -126,10 +132,10 @@ export function Map() {
           onValueChange={(v) => setFilter('serverUserId', v === '_all' ? null : v)}
         >
           <SelectTrigger className="h-8 w-[140px] text-sm">
-            <SelectValue placeholder="All users" />
+            <SelectValue placeholder={t('map.allUsers')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="_all">All users</SelectItem>
+            <SelectItem value="_all">{t('map.allUsers')}</SelectItem>
             {users.map((user) => (
               <SelectItem key={user.id} value={user.id}>
                 {user.identityName ?? user.username}
@@ -144,10 +150,10 @@ export function Map() {
           onValueChange={(v) => setFilter('mediaType', v === '_all' ? null : v)}
         >
           <SelectTrigger className="h-8 w-[100px] text-sm">
-            <SelectValue placeholder="All types" />
+            <SelectValue placeholder={t('map.allTypes')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="_all">All types</SelectItem>
+            <SelectItem value="_all">{t('map.allTypes')}</SelectItem>
             {availableMediaTypeOptions.map((m) => (
               <SelectItem key={m.value} value={m.value}>
                 {m.label}
@@ -183,7 +189,7 @@ export function Map() {
             )}
           >
             <Flame className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Heatmap</span>
+            <span className="hidden sm:inline">{t('map.heatmap')}</span>
           </Button>
           <Button
             variant="ghost"
@@ -197,7 +203,7 @@ export function Map() {
             )}
           >
             <CircleDot className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Circles</span>
+            <span className="hidden sm:inline">{t('map.circles')}</span>
           </Button>
         </div>
 
@@ -207,12 +213,12 @@ export function Map() {
           <div className="flex items-center gap-3">
             <div>
               <span className="font-semibold tabular-nums">{summary?.totalStreams ?? 0}</span>
-              <span className="text-muted-foreground ml-1">streams</span>
+              <span className="text-muted-foreground ml-1">{t('map.streams')}</span>
             </div>
             <div className="bg-border h-4 w-px" />
             <div>
               <span className="font-semibold tabular-nums">{summary?.uniqueLocations ?? 0}</span>
-              <span className="text-muted-foreground ml-1">locations</span>
+              <span className="text-muted-foreground ml-1">{t('map.locations')}</span>
             </div>
           </div>
         </div>
