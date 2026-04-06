@@ -1,262 +1,270 @@
 {
+  "push": {
+    "newDevice": "Новий пристрій",
+    "serverDown": "З'єднання з сервером втрачено",
+    "serverUp": "Сервер знову онлайн",
+    "streamEnded": "Трансляцію завершено",
+    "streamStarted": "Трансляцію розпочато",
+    "trustScoreChanged": "Змінено рейтинг довіри",
+    "violationDetected": "Sharing Violation Detected"
+  },
+  "settings": {
+    "allSeverity": "All (Low, Warning, High)",
+    "allTypes": "Усі типи",
+    "concurrentStreams": "Concurrent Streams",
+    "concurrentStreamsDesc": "When max stream limit is exceeded",
+    "enablePushNotifications": "Увімкнути push-сповіщення",
+    "enableQuietHours": "Увімкнути тихі години",
+    "highOnly": "High severity only",
+    "minimumSeverity": "Мінімальна серйозність",
+    "newDevice": "Новий пристрій",
+    "newDeviceDesc": "When a new device connects",
+    "notificationEvents": "Notification Events",
+    "overrideForCritical": "Override for Critical",
+    "perHour": "За годину",
+    "perMinute": "За хвилину",
+    "quietHours": "Тихі години",
+    "rateLimit": "Current Rate Limit Status",
+    "rateLimiting": "Rate Limiting",
+    "serverDown": "Сервер недоступний",
+    "serverDownDesc": "When a media server goes offline",
+    "serverUp": "Сервер доступний",
+    "serverUpDesc": "When a media server comes back online",
+    "streamStarted": "Трансляцію розпочато",
+    "streamStartedDesc": "When a user starts watching",
+    "streamStopped": "Трансляцію зупинено",
+    "streamStoppedDesc": "When a user stops watching",
+    "title": "Налаштування сповіщень",
+    "trustScoreChanged": "Змінено рейтинг довіри",
+    "trustScoreChangedDesc": "When a user's trust score changes",
+    "violationDetected": "Виявлено порушення",
+    "violationDetectedDesc": "When a sharing violation is triggered",
+    "violationFilters": "Фільтри порушень",
+    "warningAndHigh": "Warning & High only"
+  },
   "toast": {
+    "error": {
+      "acknowledgeFailed": "Не вдалося підтвердити порушення",
+      "agentAddFailed": "Не вдалося додати агента",
+      "agentRemoveFailed": "Не вдалося видалити агента",
+      "agentTestFailed": "Test failed",
+      "agentUpdateFailed": "Не вдалося оновити агента",
+      "apiKeyGenerateFailed": "Не вдалося згенерувати ключ API",
+      "authFailed": "Помилка автентифікації",
+      "clipboardFailed": "Не вдалося скопіювати в буфер обміну",
+      "copyFailed": "Не вдалося скопіювати в буфер обміну",
+      "deviceRemoveFailed": "Не вдалося видалити пристрій",
+      "deviceRenameFailed": "Не вдалося перейменувати пристрій",
+      "dismissFailed": "Не вдалося відхилити порушення",
+      "displayNameUpdateFailed": "Не вдалося оновити відображуване ім'я",
+      "invalidClaimCode": {
+        "message": "Please check the server logs",
+        "title": "Invalid claim code"
+      },
+      "invalidUrl": "Неправильна URL-адреса",
+      "jobAlreadyRunning": "Job already running",
+      "jobLoadFailed": "Failed to load maintenance jobs",
+      "jobStartFailed": "Failed to start job",
+      "mobileAccessDisableFailed": "Failed to disable mobile access",
+      "mobileAccessEnableFailed": "Failed to enable mobile access",
+      "pairTokenGenerateFailed": "Failed to generate pair token",
+      "plexDirectUrl": "plex.direct URLs are relay addresses that cannot be used here. Please use a direct IP address or hostname instead.",
+      "plexUnlinkFailed": "Failed to unlink Plex account",
+      "routingUpdateFailed": "Не вдалося оновити маршрутизацію",
+      "ruleCreateFailed": "Не вдалося створити правило",
+      "ruleDeleteFailed": "Не вдалося видалити правило",
+      "ruleUpdateFailed": "Не вдалося оновити правило",
+      "serverAddFailed": "Не вдалося додати сервер",
+      "serverRemoveFailed": "Не вдалося видалити сервер",
+      "serverReorderFailed": "Failed to reorder servers",
+      "serverSyncFailed": "Не вдалося синхронізувати сервер",
+      "serverUpdateFailed": "Не вдалося оновити сервер",
+      "serverUrlUpdateFailed": "Не вдалося оновити URL-адресу сервера",
+      "sessionsDeleteFailed": "Не вдалося видалити сеанси",
+      "sessionsRevokeFailed": "Не вдалося скасувати сеанси",
+      "settingsUpdateFailed": "Не вдалося оновити налаштування",
+      "streamTerminateFailed": "Не вдалося завершити потік",
+      "trustScoresResetFailed": "Не вдалося скинути рейтинг довіри",
+      "webhookTestFailed": "Webhook test failed"
+    },
+    "info": {
+      "serverOffline": {
+        "message": "{{name}} is unreachable",
+        "title": "Сервер не в мережі"
+      },
+      "serverOnline": {
+        "message": "{{name}} знову у мережі",
+        "title": "Сервер онлайн"
+      },
+      "streamStarted": {
+        "message": "{{user}} почав дивитися {{media}}",
+        "title": "New Stream Started"
+      },
+      "streamStopped": {
+        "message": "{{user}} stopped watching",
+        "title": "Трансляцію зупинено"
+      },
+      "updateAvailable": {
+        "message": "Tracearr {{version}} доступний",
+        "title": "Доступне оновлення"
+      },
+      "violationDetected": {
+        "message": "{{user}} triggered {{ruleType}}",
+        "title": "Нове порушення: {{ruleName}}"
+      }
+    },
     "success": {
-      "serverAdded": {
-        "title": "Сервер додано",
-        "message": "{{name}} успішно підключено"
+      "agentAdded": {
+        "message": "The notification agent has been added",
+        "title": "Агент додано"
       },
-      "serverRemoved": {
-        "title": "Сервер видалено",
-        "message": "Сервер успішно видалено"
+      "agentRemoved": {
+        "message": "The notification agent has been removed",
+        "title": "Агент видалено"
       },
-      "serverSynced": {
-        "title": "Сервер синхронізовано",
-        "message": "Дані сервера синхронізовано"
+      "agentUpdated": {
+        "message": "The notification agent has been updated",
+        "title": "Агент оновлено"
       },
-      "settingsUpdated": {
-        "title": "Налаштування оновлено",
-        "message": "Ваші налаштування збережено"
+      "apiKeyGenerated": {
+        "message": "Ваш новий API-ключ готовий до використання",
+        "title": "API-ключ згенеровано"
       },
-      "tokenCopied": {
-        "title": "Токен скопійовано",
-        "message": "Парний токен скопійовано до буфера обміну"
-      },
-      "violationAcknowledged": {
-        "title": "Порушення підтверджено",
-        "message": "The violation has been marked as acknowledged"
-      },
-      "violationDismissed": {
-        "title": "Violation Dismissed",
-        "message": "Порушення було відхилено"
-      },
-      "deviceRemoved": {
-        "title": "Пристрій видалено",
-        "message": "Пристрій відключено"
-      },
-      "deviceRenamed": {
-        "title": "Пристрій перейменовано",
-        "message": "Назву пристрою оновлено"
-      },
-      "sessionsRevoked": {
-        "title": "Sessions Revoked",
-        "message": "All mobile sessions have been revoked"
-      },
-      "loggedIn": {
-        "title": "Успішно",
-        "message": "Успішно ввійшли"
-      },
-      "webhookTest": {
-        "title": "Тестування успішне",
-        "message": "Вебхук працює правильно"
+      "claimCodeValidated": {
+        "message": "You can now proceed with setup",
+        "title": "Claim code validated"
       },
       "copiedToClipboard": {
         "title": "Скопійовати до буфера обміну"
       },
-      "plexAccountLinked": {
-        "title": "Plex Account Linked",
-        "message": "You can now add servers from your Plex account"
+      "deviceRemoved": {
+        "message": "Пристрій відключено",
+        "title": "Пристрій видалено"
       },
-      "plexAccountUnlinked": {
-        "title": "Plex Account Unlinked",
-        "message": "Ваш обліковий запис Plex відключено"
-      },
-      "agentAdded": {
-        "title": "Агент додано",
-        "message": "The notification agent has been added"
-      },
-      "agentUpdated": {
-        "title": "Агент оновлено",
-        "message": "The notification agent has been updated"
-      },
-      "agentRemoved": {
-        "title": "Агент видалено",
-        "message": "The notification agent has been removed"
-      },
-      "jobCompleted": {
-        "title": "Завдання завершене",
-        "message": "{{name}} успішно завершено"
-      },
-      "ruleCreated": {
-        "title": "Правило створено",
-        "message": "Правило успішно створено"
-      },
-      "ruleUpdated": {
-        "title": "Правило оновлено",
-        "message": "Правило успішно оновлено"
-      },
-      "ruleDeleted": {
-        "title": "Правило видалено",
-        "message": "Правило успішно видалено"
-      },
-      "streamTerminated": {
-        "title": "Stream Terminated",
-        "message": "Сеанс відтворення зупинено"
-      },
-      "serverUrlUpdated": {
-        "title": "URL-адресу сервера оновлено",
-        "message": "URL-адресу сервера успішно оновлено"
-      },
-      "serverUpdated": {
-        "title": "Сервер оновлено",
-        "message": "Сервер успішно оновлено"
-      },
-      "syncCompletedWithErrors": {
-        "title": "Синхронізація завершена з помилками"
-      },
-      "sessionsDeleted": {
-        "title": "Сеанси видалено",
-        "message_one": "{{count}} сеанс видалено",
-        "message_other": "Видалено {{count}} сеансів"
-      },
-      "violationsAcknowledged": {
-        "title": "Порушення підтверджено",
-        "message_one": "{{count}} порушення підтверджено",
-        "message_other": "{{count}} порушення підтвердженні"
-      },
-      "violationsDismissed": {
-        "title": "Порушення відхилено",
-        "message_one": "{{count}} порушення відхилено",
-        "message_other": "{{count}} порушення відхилені"
-      },
-      "apiKeyGenerated": {
-        "title": "API-ключ згенеровано",
-        "message": "Ваш новий API-ключ готовий до використання"
-      },
-      "mobileAccessEnabled": {
-        "title": "Мобільний доступ увімкнено",
-        "message": "Відскануйте QR-код за допомогою мобільного додатку Tracearr для підключення"
-      },
-      "mobileAccessDisabled": {
-        "title": "Мобільний доступ вимкнено",
-        "message": "Усі мобільні сеанси були відкликані"
-      },
-      "pairTokenGenerated": {
-        "title": "Pair Token Generated",
-        "message": "Scan the QR code with your mobile device to pair"
+      "deviceRenamed": {
+        "message": "Назву пристрою оновлено",
+        "title": "Пристрій перейменовано"
       },
       "displayNameUpdated": {
         "title": "Відображуване ім'я оновлено"
       },
-      "trustScoresReset": {
-        "title": "Trust Scores Reset",
-        "message_one": "{{count}} user reset to 100",
-        "message_other": "{{count}} users reset to 100"
+      "jobCompleted": {
+        "message": "{{name}} успішно завершено",
+        "title": "Завдання завершене"
       },
-      "claimCodeValidated": {
-        "title": "Claim code validated",
-        "message": "You can now proceed with setup"
-      }
-    },
-    "error": {
-      "serverAddFailed": "Не вдалося додати сервер",
-      "serverRemoveFailed": "Не вдалося видалити сервер",
-      "serverSyncFailed": "Не вдалося синхронізувати сервер",
-      "settingsUpdateFailed": "Не вдалося оновити налаштування",
-      "copyFailed": "Не вдалося скопіювати в буфер обміну",
-      "acknowledgeFailed": "Не вдалося підтвердити порушення",
-      "dismissFailed": "Не вдалося відхилити порушення",
-      "authFailed": "Помилка автентифікації",
-      "webhookTestFailed": "Webhook test failed",
-      "ruleCreateFailed": "Не вдалося створити правило",
-      "ruleUpdateFailed": "Не вдалося оновити правило",
-      "ruleDeleteFailed": "Не вдалося видалити правило",
-      "streamTerminateFailed": "Не вдалося завершити потік",
-      "serverUrlUpdateFailed": "Не вдалося оновити URL-адресу сервера",
-      "serverUpdateFailed": "Не вдалося оновити сервер",
-      "serverReorderFailed": "Failed to reorder servers",
-      "sessionsDeleteFailed": "Не вдалося видалити сеанси",
-      "apiKeyGenerateFailed": "Не вдалося згенерувати ключ API",
-      "mobileAccessEnableFailed": "Failed to enable mobile access",
-      "mobileAccessDisableFailed": "Failed to disable mobile access",
-      "pairTokenGenerateFailed": "Failed to generate pair token",
-      "deviceRemoveFailed": "Не вдалося видалити пристрій",
-      "deviceRenameFailed": "Не вдалося перейменувати пристрій",
-      "sessionsRevokeFailed": "Не вдалося скасувати сеанси",
-      "displayNameUpdateFailed": "Не вдалося оновити відображуване ім'я",
-      "trustScoresResetFailed": "Не вдалося скинути рейтинг довіри",
-      "routingUpdateFailed": "Не вдалося оновити маршрутизацію",
-      "clipboardFailed": "Не вдалося скопіювати в буфер обміну",
-      "plexUnlinkFailed": "Failed to unlink Plex account",
-      "agentAddFailed": "Не вдалося додати агента",
-      "agentUpdateFailed": "Не вдалося оновити агента",
-      "agentRemoveFailed": "Не вдалося видалити агента",
-      "agentTestFailed": "Test failed",
-      "jobAlreadyRunning": "Job already running",
-      "jobStartFailed": "Failed to start job",
-      "jobLoadFailed": "Failed to load maintenance jobs",
-      "invalidUrl": "Неправильна URL-адреса",
-      "plexDirectUrl": "plex.direct URLs are relay addresses that cannot be used here. Please use a direct IP address or hostname instead.",
-      "invalidClaimCode": {
-        "title": "Invalid claim code",
-        "message": "Please check the server logs"
+      "loggedIn": {
+        "message": "Успішно ввійшли",
+        "title": "Успішно"
+      },
+      "mobileAccessDisabled": {
+        "message": "Усі мобільні сеанси були відкликані",
+        "title": "Мобільний доступ вимкнено"
+      },
+      "mobileAccessEnabled": {
+        "message": "Відскануйте QR-код за допомогою мобільного додатку Tracearr для підключення",
+        "title": "Мобільний доступ увімкнено"
+      },
+      "pairTokenGenerated": {
+        "message": "Scan the QR code with your mobile device to pair",
+        "title": "Pair Token Generated"
+      },
+      "plexAccountLinked": {
+        "message": "You can now add servers from your Plex account",
+        "title": "Plex Account Linked"
+      },
+      "plexAccountUnlinked": {
+        "message": "Ваш обліковий запис Plex відключено",
+        "title": "Plex Account Unlinked"
+      },
+      "ruleCreated": {
+        "message": "Правило успішно створено",
+        "title": "Правило створено"
+      },
+      "ruleDeleted": {
+        "message": "Правило успішно видалено",
+        "title": "Правило видалено"
+      },
+      "ruleUpdated": {
+        "message": "Правило успішно оновлено",
+        "title": "Правило оновлено"
+      },
+      "serverAdded": {
+        "message": "{{name}} успішно підключено",
+        "title": "Сервер додано"
+      },
+      "serverRemoved": {
+        "message": "Сервер успішно видалено",
+        "title": "Сервер видалено"
+      },
+      "serverSynced": {
+        "message": "Дані сервера синхронізовано",
+        "title": "Сервер синхронізовано"
+      },
+      "serverUpdated": {
+        "message": "Сервер успішно оновлено",
+        "title": "Сервер оновлено"
+      },
+      "serverUrlUpdated": {
+        "message": "URL-адресу сервера успішно оновлено",
+        "title": "URL-адресу сервера оновлено"
+      },
+      "sessionsDeleted": {
+        "message_one": "{{count}} сеанс видалено",
+        "message_other": "Видалено {{count}} сеансів",
+        "title": "Сеанси видалено"
+      },
+      "sessionsRevoked": {
+        "message": "All mobile sessions have been revoked",
+        "title": "Sessions Revoked"
+      },
+      "settingsUpdated": {
+        "message": "Ваші налаштування збережено",
+        "title": "Налаштування оновлено"
+      },
+      "streamTerminated": {
+        "message": "Сеанс відтворення зупинено",
+        "title": "Stream Terminated"
+      },
+      "syncCompletedWithErrors": {
+        "title": "Синхронізація завершена з помилками"
+      },
+      "tokenCopied": {
+        "message": "Парний токен скопійовано до буфера обміну",
+        "title": "Токен скопійовано"
+      },
+      "trustScoresReset": {
+        "message_one": "{{count}} user reset to 100",
+        "message_other": "{{count}} users reset to 100",
+        "title": "Trust Scores Reset"
+      },
+      "violationAcknowledged": {
+        "message": "The violation has been marked as acknowledged",
+        "title": "Порушення підтверджено"
+      },
+      "violationDismissed": {
+        "message": "Порушення було відхилено",
+        "title": "Violation Dismissed"
+      },
+      "violationsAcknowledged": {
+        "message_one": "{{count}} порушення підтверджено",
+        "message_other": "{{count}} порушення підтвердженні",
+        "title": "Порушення підтверджено"
+      },
+      "violationsDismissed": {
+        "message_one": "{{count}} порушення відхилено",
+        "message_other": "{{count}} порушення відхилені",
+        "title": "Порушення відхилено"
+      },
+      "webhookTest": {
+        "message": "Вебхук працює правильно",
+        "title": "Тестування успішне"
       }
     },
     "warning": {
       "jobFailed": {
-        "title": "Job Failed",
-        "message": "{{name}} encountered an error"
-      }
-    },
-    "info": {
-      "streamStarted": {
-        "title": "New Stream Started",
-        "message": "{{user}} почав дивитися {{media}}"
-      },
-      "streamStopped": {
-        "title": "Трансляцію зупинено",
-        "message": "{{user}} stopped watching"
-      },
-      "updateAvailable": {
-        "title": "Доступне оновлення",
-        "message": "Tracearr {{version}} доступний"
-      },
-      "serverOffline": {
-        "title": "Сервер не в мережі",
-        "message": "{{name}} is unreachable"
-      },
-      "serverOnline": {
-        "title": "Сервер онлайн",
-        "message": "{{name}} знову у мережі"
-      },
-      "violationDetected": {
-        "title": "Нове порушення: {{ruleName}}",
-        "message": "{{user}} triggered {{ruleType}}"
+        "message": "{{name}} encountered an error",
+        "title": "Job Failed"
       }
     }
-  },
-  "push": {
-    "violationDetected": "Sharing Violation Detected",
-    "streamStarted": "Трансляцію розпочато",
-    "streamEnded": "Трансляцію завершено",
-    "serverDown": "З'єднання з сервером втрачено",
-    "serverUp": "Сервер знову онлайн",
-    "newDevice": "Новий пристрій",
-    "trustScoreChanged": "Змінено рейтинг довіри"
-  },
-  "settings": {
-    "title": "Налаштування сповіщень",
-    "allSeverity": "All (Low, Warning, High)",
-    "warningAndHigh": "Warning & High only",
-    "highOnly": "High severity only",
-    "allTypes": "Усі типи",
-    "rateLimit": "Current Rate Limit Status",
-    "perMinute": "За хвилину",
-    "perHour": "За годину",
-    "enablePushNotifications": "Увімкнути push-сповіщення",
-    "notificationEvents": "Notification Events",
-    "violationDetected": "Виявлено порушення",
-    "streamStarted": "Трансляцію розпочато",
-    "streamStopped": "Трансляцію зупинено",
-    "concurrentStreams": "Concurrent Streams",
-    "newDevice": "Новий пристрій",
-    "trustScoreChanged": "Змінено рейтинг довіри",
-    "serverDown": "Сервер недоступний",
-    "serverUp": "Сервер доступний",
-    "violationFilters": "Фільтри порушень",
-    "minimumSeverity": "Мінімальна серйозність",
-    "quietHours": "Тихі години",
-    "enableQuietHours": "Увімкнути тихі години",
-    "overrideForCritical": "Override for Critical",
-    "rateLimiting": "Rate Limiting"
   }
 }
