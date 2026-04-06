@@ -42,7 +42,7 @@ function formatDate(iso: string): string {
 // ============================================================================
 
 function BackupCard({ onRestore }: { onRestore: (backup: BackupListItem) => void }) {
-  const { t } = useTranslation('settings');
+  const { t } = useTranslation(['settings', 'common']);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -262,7 +262,7 @@ function BackupCard({ onRestore }: { onRestore: (backup: BackupListItem) => void
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title={t('backup.deleteConfirmTitle')}
         description={t('backup.deleteConfirmDescription')}
-        confirmLabel={t('backup.delete')}
+        confirmLabel={t('common:actions.delete')}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
         isLoading={deleteMutation.isPending}
       />
@@ -275,7 +275,7 @@ function BackupCard({ onRestore }: { onRestore: (backup: BackupListItem) => void
 // ============================================================================
 
 function RestoreCard({ backup, onClose }: { backup: BackupListItem; onClose: () => void }) {
-  const { t } = useTranslation('settings');
+  const { t } = useTranslation(['settings', 'common']);
   const [confirmed, setConfirmed] = useState(false);
   const { restore: restoreProgress } = useMaintenanceMode();
 
@@ -476,7 +476,7 @@ function RestoreCard({ backup, onClose }: { backup: BackupListItem; onClose: () 
                 {t('backup.restore.confirm')}
               </Button>
               <Button variant="outline" onClick={onClose}>
-                {t('backup.restore.cancel')}
+                {t('common:actions.cancel')}
               </Button>
             </div>
           </div>
