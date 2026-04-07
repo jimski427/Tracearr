@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,6 +74,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 export function ServerSettings() {
+  const { t } = useTranslation(['settings', 'common', 'notifications', 'pages']);
   const { data: serversData, isLoading, refetch } = useServers();
   const deleteServer = useDeleteServer();
   const syncServer = useSyncServer();
@@ -262,7 +264,9 @@ export function ServerSettings() {
         accountId: selectedPlexAccountId ?? undefined,
       });
 
-      toast.success('Server Added', { description: `${name} has been connected successfully` });
+      toast.success(t('notifications:toast.success.serverAdded.title'), {
+        description: t('notifications:toast.success.serverAdded.message', { name }),
+      });
 
       // Refresh server list, user data, and plex accounts (for server count)
       await refetch();
@@ -281,7 +285,7 @@ export function ServerSettings() {
 
   const handleAddServer = async () => {
     if (!serverUrl || !serverName || !apiKey) {
-      setConnectError('All fields are required');
+      setConnectError(t('servers.allFieldsRequired'));
       return;
     }
 
@@ -346,11 +350,9 @@ export function ServerSettings() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <ServerIcon className="h-5 w-5" />
-              Connected Servers
+              {t('servers.title')}
             </CardTitle>
-            <CardDescription>
-              Manage your connected Plex, Jellyfin, and Emby servers
-            </CardDescription>
+            <CardDescription>{t('servers.description')}</CardDescription>
           </div>
           <Button
             onClick={() => {
@@ -358,17 +360,15 @@ export function ServerSettings() {
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Server
+            {t('servers.addServer')}
           </Button>
         </CardHeader>
         <CardContent>
           {!servers || servers.length === 0 ? (
             <div className="flex h-32 flex-col items-center justify-center gap-2 rounded-lg border border-dashed">
               <ServerIcon className="text-muted-foreground h-8 w-8" />
-              <p className="text-muted-foreground">No servers connected</p>
-              <p className="text-muted-foreground text-xs">
-                Click "Add Server" to connect a Jellyfin or Emby server
-              </p>
+              <p className="text-muted-foreground">{t('servers.noServersConnected')}</p>
+              <p className="text-muted-foreground text-xs">{t('servers.noServersConnectedHint')}</p>
             </div>
           ) : (
             <DndContext
@@ -411,9 +411,9 @@ export function ServerSettings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Link2 className="h-5 w-5" />
-              Linked Plex Accounts
+              {t('pages:settings.plex.linkedAccounts')}
             </CardTitle>
-            <CardDescription>Manage the Plex accounts you can add servers from</CardDescription>
+            <CardDescription>{t('pages:settings.plex.linkedAccountsDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <PlexAccountsManager onAccountLinked={() => void fetchPlexServers()} />
@@ -433,18 +433,18 @@ export function ServerSettings() {
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Server</DialogTitle>
+            <DialogTitle>{t('servers.addServer')}</DialogTitle>
             <DialogDescription>
               {serverType === 'plex'
-                ? 'Add another Plex server you own to Tracearr.'
-                : 'Connect a Jellyfin or Emby server. You need administrator access.'}
+                ? t('servers.addServerDialogDescPlex')
+                : t('servers.addServerDialogDescOther')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {/* Server Type Selector */}
             <div className="space-y-2">
-              <Label>Server Type</Label>
+              <Label>{t('servers.serverType')}</Label>
               <Select
                 value={serverType}
                 onValueChange={(v) => {
@@ -474,7 +474,7 @@ export function ServerSettings() {
                 {plexDialogStep === 'loading' && (
                   <div className="flex flex-col items-center justify-center gap-3 py-8">
                     <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
-                    <p className="text-muted-foreground text-sm">Loading linked Plex accounts...</p>
+                    <p className="text-muted-foreground text-sm">{t('servers.loadingAccounts')}</p>
                   </div>
                 )}
 
@@ -482,10 +482,9 @@ export function ServerSettings() {
                   <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
                     <AlertTriangle className="h-8 w-8 text-amber-500" />
                     <div>
-                      <p className="font-medium">No Plex Accounts Linked</p>
+                      <p className="font-medium">{t('servers.noPlexAccountsLinked')}</p>
                       <p className="text-muted-foreground mt-1 text-sm">
-                        Link a Plex account first using the &quot;Linked Plex Accounts&quot; section
-                        below.
+                        {t('servers.noPlexAccountsLinkedHint')}
                       </p>
                     </div>
                     {connectError && <p className="text-destructive text-sm">{connectError}</p>}
@@ -495,7 +494,7 @@ export function ServerSettings() {
                 {plexDialogStep === 'select-account' && (
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Select Plex Account</Label>
+                      <Label>{t('servers.selectPlexAccount')}</Label>
                       <Select
                         value={selectedPlexAccountId ?? ''}
                         onValueChange={(id) => {
@@ -504,19 +503,20 @@ export function ServerSettings() {
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Choose an account..." />
+                          <SelectValue placeholder={t('servers.chooseAccount')} />
                         </SelectTrigger>
                         <SelectContent>
                           {plexAccounts.map((account) => (
                             <SelectItem key={account.id} value={account.id}>
-                              {account.plexUsername ?? account.plexEmail ?? 'Plex Account'}
+                              {account.plexUsername ??
+                                account.plexEmail ??
+                                t('servers.plexAccount')}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       <p className="text-muted-foreground text-xs">
-                        You have {plexAccounts.length} Plex accounts linked. Select which one to add
-                        a server from.
+                        {t('servers.selectAccountHelp')}
                       </p>
                     </div>
                   </div>
@@ -526,7 +526,7 @@ export function ServerSettings() {
                   <div className="flex flex-col items-center justify-center gap-3 py-8">
                     <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
                     <p className="text-muted-foreground text-sm">
-                      Discovering available Plex servers...
+                      {t('servers.discoveringServers')}
                     </p>
                   </div>
                 )}
@@ -535,7 +535,7 @@ export function ServerSettings() {
                   <div className="space-y-4">
                     {plexAccounts.length > 1 && (
                       <div className="space-y-2">
-                        <Label>Plex Account</Label>
+                        <Label>{t('servers.plexAccount')}</Label>
                         <Select
                           value={selectedPlexAccountId ?? ''}
                           onValueChange={(id) => {
@@ -549,7 +549,9 @@ export function ServerSettings() {
                           <SelectContent>
                             {plexAccounts.map((account) => (
                               <SelectItem key={account.id} value={account.id}>
-                                {account.plexUsername ?? account.plexEmail ?? 'Plex Account'}
+                                {account.plexUsername ??
+                                  account.plexEmail ??
+                                  t('servers.plexAccount')}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -559,10 +561,9 @@ export function ServerSettings() {
                     <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
                       <ServerIcon className="text-muted-foreground h-8 w-8" />
                       <div>
-                        <p className="font-medium">All Servers Connected</p>
+                        <p className="font-medium">{t('servers.allServersConnected')}</p>
                         <p className="text-muted-foreground mt-1 text-sm">
-                          All your owned Plex servers from this account are already connected to
-                          Tracearr.
+                          {t('servers.allServersConnectedDesc')}
                         </p>
                       </div>
                     </div>
@@ -573,7 +574,7 @@ export function ServerSettings() {
                   <div className="space-y-4">
                     {plexAccounts.length > 1 && (
                       <div className="space-y-2">
-                        <Label>Plex Account</Label>
+                        <Label>{t('servers.plexAccount')}</Label>
                         <Select
                           value={selectedPlexAccountId ?? ''}
                           onValueChange={(id) => {
@@ -587,7 +588,9 @@ export function ServerSettings() {
                           <SelectContent>
                             {plexAccounts.map((account) => (
                               <SelectItem key={account.id} value={account.id}>
-                                {account.plexUsername ?? account.plexEmail ?? 'Plex Account'}
+                                {account.plexUsername ??
+                                  account.plexEmail ??
+                                  t('servers.plexAccount')}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -615,25 +618,26 @@ export function ServerSettings() {
               /* Jellyfin/Emby Form */
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="serverUrl">Server URL</Label>
+                  <Label htmlFor="serverUrl">{t('servers.serverUrl')}</Label>
                   <Input
                     id="serverUrl"
-                    placeholder="http://192.168.1.100:8096"
+                    placeholder={t('servers.serverUrlPlaceholder')}
                     value={serverUrl}
                     onChange={(e) => {
                       setServerUrl(e.target.value);
                     }}
                   />
                   <p className="text-muted-foreground text-xs">
-                    The URL where your {serverType === 'jellyfin' ? 'Jellyfin' : 'Emby'} server is
-                    accessible
+                    {serverType === 'jellyfin'
+                      ? t('servers.serverUrlHelpJellyfin')
+                      : t('servers.serverUrlHelpEmby')}
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="serverName">Server Name</Label>
+                  <Label htmlFor="serverName">{t('servers.serverName')}</Label>
                   <Input
                     id="serverName"
-                    placeholder="My Media Server"
+                    placeholder={t('servers.serverNamePlaceholder')}
                     value={serverName}
                     onChange={(e) => {
                       setServerName(e.target.value);
@@ -641,11 +645,11 @@ export function ServerSettings() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="apiKey">API Key</Label>
+                  <Label htmlFor="apiKey">{t('common:labels.apiKey')}</Label>
                   <Input
                     id="apiKey"
                     type="password"
-                    placeholder="Enter your API key"
+                    placeholder={t('servers.apiKeyPlaceholder')}
                     value={apiKey}
                     onChange={(e) => {
                       setApiKey(e.target.value);
@@ -653,8 +657,8 @@ export function ServerSettings() {
                   />
                   <p className="text-muted-foreground text-xs">
                     {serverType === 'jellyfin'
-                      ? 'Find this in Jellyfin Dashboard → API Keys'
-                      : 'Find this in Emby Server → API Keys'}
+                      ? t('servers.apiKeyHelpJellyfin')
+                      : t('servers.apiKeyHelpEmby')}
                   </p>
                 </div>
                 {connectError && (
@@ -675,17 +679,17 @@ export function ServerSettings() {
                 resetAddForm();
               }}
             >
-              Cancel
+              {t('common:actions.cancel')}
             </Button>
             {serverType !== 'plex' && (
               <Button onClick={handleAddServer} disabled={isConnecting}>
                 {isConnecting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Connecting...
+                    {t('servers.connecting')}
                   </>
                 ) : (
-                  'Connect Server'
+                  t('servers.connectServer')
                 )}
               </Button>
             )}
@@ -698,9 +702,9 @@ export function ServerSettings() {
         onOpenChange={() => {
           setDeleteId(null);
         }}
-        title="Remove Server"
-        description="Are you sure you want to remove this server? All associated session data will be retained, but you won't be able to monitor new sessions from this server."
-        confirmLabel="Remove"
+        title={t('servers.removeServer')}
+        description={t('servers.removeServerConfirm')}
+        confirmLabel={t('common:actions.remove')}
         onConfirm={handleDelete}
         isLoading={deleteServer.isPending}
       />
@@ -747,6 +751,7 @@ function EditServerDialog({
   onUpdate: (name?: string, url?: string, clientIdentifier?: string, color?: string | null) => void;
   isUpdating: boolean;
 }) {
+  const { t } = useTranslation(['settings', 'common', 'pages']);
   const [editName, setEditName] = useState('');
   const [manualUrl, setManualUrl] = useState('');
   const [editColor, setEditColor] = useState('#3b82f6');
@@ -792,21 +797,18 @@ function EditServerDialog({
     <Dialog open={!!server} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className={cn('max-w-md', isPlexServer && 'max-w-lg')}>
         <DialogHeader>
-          <DialogTitle>Edit Server</DialogTitle>
-          <DialogDescription>
-            Update the server name and/or URL. The existing API token will be tested if you change
-            the URL.
-          </DialogDescription>
+          <DialogTitle>{t('servers.editServer')}</DialogTitle>
+          <DialogDescription>{t('servers.editServerDesc')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-name">Server name</Label>
+            <Label htmlFor="edit-name">{t('servers.serverName')}</Label>
             <Input
               id="edit-name"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              placeholder="My Plex Server"
+              placeholder={t('servers.plexServerPlaceholder')}
               maxLength={100}
             />
           </div>
@@ -814,12 +816,12 @@ function EditServerDialog({
           {isPlexServer ? (
             // Plex: Show server selector for URL
             <div className="space-y-2">
-              <Label>Server URL</Label>
+              <Label>{t('servers.serverUrl')}</Label>
               {isLoadingConnections ? (
                 <div className="flex items-center justify-center py-4">
                   <Loader2 className="h-5 w-5 animate-spin" />
                   <span className="text-muted-foreground ml-2 text-sm">
-                    Discovering connections...
+                    {t('servers.discoveringConnections')}
                   </span>
                 </div>
               ) : connectionsData?.server ? (
@@ -833,9 +835,7 @@ function EditServerDialog({
                     showCancel={true}
                   />
                   {hasNameChange && (
-                    <p className="text-muted-foreground text-sm">
-                      Or click Update below to save only the name change.
-                    </p>
+                    <p className="text-muted-foreground text-sm">{t('servers.updateHint')}</p>
                   )}
                 </>
               ) : (
@@ -843,14 +843,14 @@ function EditServerDialog({
                   id="edit-url"
                   value={manualUrl}
                   onChange={(e) => setManualUrl(e.target.value)}
-                  placeholder="http://192.168.1.100:32400"
+                  placeholder={t('servers.plexServerUrlPlaceholder')}
                 />
               )}
             </div>
           ) : (
             // Jellyfin/Emby: URL input
             <div className="space-y-2">
-              <Label htmlFor="edit-url">Server URL</Label>
+              <Label htmlFor="edit-url">{t('servers.serverUrl')}</Label>
               <Input
                 id="edit-url"
                 value={manualUrl}
@@ -862,7 +862,7 @@ function EditServerDialog({
 
           {/* Color picker */}
           <div className="space-y-2">
-            <Label>Server Color</Label>
+            <Label>{t('servers.serverColor')}</Label>
             <div className="flex items-center gap-2">
               {SERVER_COLOR_PALETTE.map((preset) => {
                 const isSelected = editColor.toLowerCase() === preset.hex.toLowerCase();
@@ -891,24 +891,22 @@ function EditServerDialog({
                 );
               })}
             </div>
-            <p className="text-muted-foreground text-xs">
-              Used for visual attribution in multi-server view
-            </p>
+            <p className="text-muted-foreground text-xs">{t('servers.serverColorDesc')}</p>
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={isUpdating || !canSave}>
             {isUpdating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Updating...
+                {t('servers.updating')}
               </>
             ) : (
-              'Update'
+              t('common:actions.update')
             )}
           </Button>
         </DialogFooter>
@@ -932,6 +930,7 @@ function SortableServerCard({
   isSyncing?: boolean;
   isDraggable?: boolean;
 }) {
+  const { t } = useTranslation(['settings', 'common', 'pages']);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: server.id,
     disabled: !isDraggable,
@@ -969,7 +968,11 @@ function SortableServerCard({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-semibold">{server.name}</h3>
-              <button onClick={onEdit} className="hover:text-primary" title="Edit server">
+              <button
+                onClick={onEdit}
+                className="hover:text-primary"
+                title={t('servers.editServer')}
+              >
                 <Pencil className="h-3 w-3" />
               </button>
             </div>
@@ -985,14 +988,14 @@ function SortableServerCard({
               </a>
             </div>
             <p className="text-muted-foreground text-xs">
-              Added {format(new Date(server.createdAt), 'MMM d, yyyy')}
+              {t('servers.added', { date: format(new Date(server.createdAt), 'MMM d, yyyy') })}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={onSync} disabled={isSyncing}>
             <RefreshCw className={cn('mr-1 h-4 w-4', isSyncing && 'animate-spin')} />
-            Sync
+            {t('common:actions.sync')}
           </Button>
           <Button variant="ghost" size="sm" onClick={onDelete}>
             <Trash2 className="text-destructive h-4 w-4" />

@@ -89,6 +89,9 @@ RUN mkdir -p /app/data/image-cache /data/backup
 # Install production dependencies only (ignore-scripts prevents prepare/husky from running)
 RUN pnpm install --prod --frozen-lockfile --ignore-scripts
 
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 tracearr
@@ -115,4 +118,5 @@ LABEL org.opencontainers.image.source="https://github.com/jimski427/Tracearr" \
       org.opencontainers.image.revision="${APP_COMMIT}" \
       org.opencontainers.image.created="${APP_BUILD_DATE}"
 
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "apps/server/dist/index.js"]

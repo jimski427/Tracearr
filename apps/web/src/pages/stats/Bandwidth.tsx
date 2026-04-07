@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { Activity, Users, Gauge, Clock, HardDrive, ArrowDown, ArrowUp } from 'lucide-react';
 import Highcharts from 'highcharts';
@@ -32,6 +33,7 @@ interface BandwidthChartProps {
 }
 
 function BandwidthChart({ data, isLoading, height = 300, period = 'month' }: BandwidthChartProps) {
+  const { t } = useTranslation(['pages', 'common']);
   const options = useMemo<Highcharts.Options>(() => {
     if (!data || data.length === 0) {
       return {};
@@ -78,7 +80,7 @@ function BandwidthChart({ data, isLoading, height = 300, period = 'month' }: Ban
             );
             if (isNaN(date.getTime())) return '';
             if (period === 'year') {
-              return date.toLocaleDateString('en-US', { month: 'short' });
+              return date.toLocaleDateString(undefined, { month: 'short' });
             }
             return `${date.getMonth() + 1}/${date.getDate()}`;
           },
@@ -90,7 +92,7 @@ function BandwidthChart({ data, isLoading, height = 300, period = 'month' }: Ban
       yAxis: [
         {
           title: {
-            text: 'Avg Bitrate (Mbps)',
+            text: t('statsBandwidth.avgBitrateMbps'),
             style: {
               color: 'hsl(var(--primary))',
             },
@@ -105,7 +107,7 @@ function BandwidthChart({ data, isLoading, height = 300, period = 'month' }: Ban
         },
         {
           title: {
-            text: 'Sessions',
+            text: t('common:labels.sessions'),
             style: {
               color: 'hsl(var(--chart-2))',
             },
@@ -165,18 +167,20 @@ function BandwidthChart({ data, isLoading, height = 300, period = 'month' }: Ban
             : null;
           const dateStr =
             date && !isNaN(date.getTime())
-              ? date.toLocaleDateString('en-US', {
+              ? date.toLocaleDateString(undefined, {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
                 })
-              : 'Unknown';
+              : t('common:labels.unknown');
 
           let html = `<b>${dateStr}</b><br/>`;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (this as any).points?.forEach((point: any) => {
             const value =
-              point.series.name === 'Avg Bitrate' ? `${point.y.toFixed(1)} Mbps` : point.y;
+              point.series.name === t('statsBandwidth.avgBitrate')
+                ? `${point.y.toFixed(1)} Mbps`
+                : point.y;
             html += `<span style="color:${point.color}">\u25CF</span> ${point.series.name}: <b>${value}</b><br/>`;
           });
           return html;
@@ -185,14 +189,14 @@ function BandwidthChart({ data, isLoading, height = 300, period = 'month' }: Ban
       series: [
         {
           type: 'area',
-          name: 'Avg Bitrate',
+          name: t('statsBandwidth.avgBitrate'),
           data: data.map((d) => d.avgBitrateMbps),
           yAxis: 0,
           color: 'hsl(var(--primary))',
         },
         {
           type: 'column',
-          name: 'Sessions',
+          name: t('common:labels.sessions'),
           data: data.map((d) => d.sessions),
           yAxis: 1,
           color: 'hsl(var(--chart-2))',
@@ -226,7 +230,7 @@ function BandwidthChart({ data, isLoading, height = 300, period = 'month' }: Ban
         ],
       },
     };
-  }, [data, height, period]);
+  }, [data, height, period, t]);
 
   if (isLoading) {
     return <ChartSkeleton height={height} />;
@@ -238,7 +242,7 @@ function BandwidthChart({ data, isLoading, height = 300, period = 'month' }: Ban
         className="text-muted-foreground flex items-center justify-center rounded-lg border border-dashed"
         style={{ height }}
       >
-        No bandwidth data available
+        {t('statsBandwidth.noData')}
       </div>
     );
   }
@@ -253,6 +257,7 @@ function BandwidthChart({ data, isLoading, height = 300, period = 'month' }: Ban
 }
 
 export function StatsBandwidth() {
+  const { t } = useTranslation(['pages', 'common']);
   const { value: timeRange, setValue: setTimeRange, apiParams } = useTimeRange();
   const { selectedServerId } = useServer();
 
@@ -280,10 +285,8 @@ export function StatsBandwidth() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Bandwidth</h1>
-          <p className="text-muted-foreground text-sm">
-            Streaming bandwidth usage and bitrate analysis
-          </p>
+          <h1 className="text-2xl font-bold">{t('statsBandwidth.title')}</h1>
+          <p className="text-muted-foreground text-sm">{t('statsBandwidth.description')}</p>
         </div>
         <TimeRangePicker value={timeRange} onChange={setTimeRange} />
       </div>
@@ -292,32 +295,34 @@ export function StatsBandwidth() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <StatCard
           icon={Activity}
-          label="Total Sessions"
+          label={t('common:labels.totalSessions')}
           value={summaryData?.totalSessions.toLocaleString() ?? 0}
           isLoading={summary.isLoading}
         />
         <StatCard
           icon={HardDrive}
-          label="Data Transferred"
+          label={t('statsBandwidth.dataTransferred')}
           value={formatBytes(summaryData?.totalBytes ?? 0)}
           isLoading={summary.isLoading}
         />
         <StatCard
           icon={Gauge}
-          label="Avg Bitrate"
+          label={t('statsBandwidth.avgBitrate')}
           value={`${summaryData?.avgBitrateMbps.toFixed(1) ?? 0} Mbps`}
-          subValue={`Peak: ${summaryData?.peakBitrateMbps.toFixed(1) ?? 0} Mbps`}
+          subValue={t('statsBandwidth.peakBitrate', {
+            value: summaryData?.peakBitrateMbps.toFixed(1) ?? 0,
+          })}
           isLoading={summary.isLoading}
         />
         <StatCard
           icon={Clock}
-          label="Total Watch Time"
+          label={t('statsBandwidth.totalWatchTime')}
           value={formatWatchTime(summaryData?.totalDurationMs ?? 0)}
           isLoading={summary.isLoading}
         />
         <StatCard
           icon={Users}
-          label="Unique Users"
+          label={t('statsBandwidth.uniqueUsers')}
           value={summaryData?.uniqueUsers ?? 0}
           isLoading={summary.isLoading}
         />
@@ -326,8 +331,8 @@ export function StatsBandwidth() {
       {/* Bandwidth Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Daily Bandwidth Usage</CardTitle>
-          <CardDescription>Average bitrate and session count over time</CardDescription>
+          <CardTitle>{t('statsBandwidth.dailyUsage')}</CardTitle>
+          <CardDescription>{t('statsBandwidth.dailyUsageDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <BandwidthChart
@@ -342,8 +347,8 @@ export function StatsBandwidth() {
       {/* Top Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Top Bandwidth Users</CardTitle>
-          <CardDescription>Users consuming the most bandwidth</CardDescription>
+          <CardTitle>{t('statsBandwidth.topUsers')}</CardTitle>
+          <CardDescription>{t('statsBandwidth.topUsersDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           {topUsers.isLoading ? (
@@ -356,9 +361,9 @@ export function StatsBandwidth() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">Rank</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead className="text-right">Sessions</TableHead>
+                  <TableHead className="w-12">{t('common:labels.rank')}</TableHead>
+                  <TableHead>{t('common:labels.user')}</TableHead>
+                  <TableHead className="text-right">{t('common:labels.sessions')}</TableHead>
                   <TableHead className="text-right">
                     <button
                       type="button"
@@ -367,7 +372,7 @@ export function StatsBandwidth() {
                         setDataSortDir((current) => (current === 'asc' ? 'desc' : 'asc'))
                       }
                     >
-                      Data
+                      {t('common:labels.data')}
                       {dataSortDir === 'asc' ? (
                         <ArrowUp className="h-3.5 w-3.5" />
                       ) : (
@@ -375,8 +380,8 @@ export function StatsBandwidth() {
                       )}
                     </button>
                   </TableHead>
-                  <TableHead className="text-right">Watch Time</TableHead>
-                  <TableHead className="text-right">Avg Bitrate</TableHead>
+                  <TableHead className="text-right">{t('common:labels.watchTime')}</TableHead>
+                  <TableHead className="text-right">{t('statsBandwidth.avgBitrate')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -415,7 +420,7 @@ export function StatsBandwidth() {
           ) : (
             <div className="rounded-xl border border-dashed p-8 text-center">
               <Users className="text-muted-foreground/50 mx-auto h-12 w-12" />
-              <p className="text-muted-foreground mt-2">No user data available</p>
+              <p className="text-muted-foreground mt-2">{t('common:empty.noUserData')}</p>
             </div>
           )}
         </CardContent>

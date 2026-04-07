@@ -1,0 +1,270 @@
+{
+  "toast": {
+    "success": {
+      "serverAdded": {
+        "title": "Server Tilføjet",
+        "message": "{{name}} er blevet forbundet"
+      },
+      "serverRemoved": {
+        "title": "Server Fjernet",
+        "message": "Serveren er blevet fjernet"
+      },
+      "serverSynced": {
+        "title": "Server Synkroniseret",
+        "message": "Serverdata er synkroniseret"
+      },
+      "settingsUpdated": {
+        "title": "Indstillinger Opdateret",
+        "message": "Dine indstillinger er blevet gemt"
+      },
+      "tokenCopied": {
+        "title": "Token Kopieret",
+        "message": "Par token kopieret til udklipsholder"
+      },
+      "violationAcknowledged": {
+        "title": "Overtrædelse Anerkendt",
+        "message": "Overtrædelsen er markeret som anerkendt"
+      },
+      "violationDismissed": {
+        "title": "Overtrædelse Afvist",
+        "message": "Overtrædelsen er blevet afvist"
+      },
+      "deviceRemoved": {
+        "title": "Enhed Fjernet",
+        "message": "Enheden er blevet afbrudt"
+      },
+      "deviceRenamed": {
+        "title": "Enhed Omdøbt",
+        "message": "Enhedens navn er blevet opdateret"
+      },
+      "sessionsRevoked": {
+        "title": "Sessioner Tilbagekaldt",
+        "message": "Alle mobilsessioner er blevet tilbagekaldt"
+      },
+      "loggedIn": {
+        "title": "Succes",
+        "message": "Logget ind"
+      },
+      "webhookTest": {
+        "title": "Test Lykkedes",
+        "message": "Webhook fungerer korrekt"
+      },
+      "copiedToClipboard": {
+        "title": "Kopieret til udklipsholder"
+      },
+      "plexAccountLinked": {
+        "title": "Plex Konto Linket",
+        "message": "Du kan nu tilføje servere fra din Plex konto"
+      },
+      "plexAccountUnlinked": {
+        "title": "Plex Konto Ikke Linket",
+        "message": "Din Plex konto er blevet afbrudt"
+      },
+      "agentAdded": {
+        "title": "Agent Tilføjet",
+        "message": "Anmeldelsesagenten er blevet tilføjet"
+      },
+      "agentUpdated": {
+        "title": "Agenten Opdateret",
+        "message": "Anmeldelsesagent er blevet opdateret"
+      },
+      "agentRemoved": {
+        "title": "Agenten Fjernet",
+        "message": "Anmeldelsesagenten er blevet fjernet"
+      },
+      "jobCompleted": {
+        "title": "Job Afsluttet",
+        "message": "{{name}} afsluttet"
+      },
+      "ruleCreated": {
+        "title": "Regel Oprettet",
+        "message": "Reglen er blevet oprettet"
+      },
+      "ruleUpdated": {
+        "title": "Regel Opdateret",
+        "message": "Reglen er blevet opdateret"
+      },
+      "ruleDeleted": {
+        "title": "Regel Slettet",
+        "message": "Reglen er blevet slettet"
+      },
+      "streamTerminated": {
+        "title": "Stream Afsluttet",
+        "message": "Afspilningssessionen er blevet stoppet"
+      },
+      "serverUrlUpdated": {
+        "title": "Server URL Opdateret",
+        "message": "Serverens URL er blevet opdateret"
+      },
+      "serverUpdated": {
+        "title": "Server Opdateret",
+        "message": "Serveren er blevet opdateret"
+      },
+      "syncCompletedWithErrors": {
+        "title": "Synkronisering fuldført med fejl"
+      },
+      "sessionsDeleted": {
+        "title": "Sessioner Slettet",
+        "message_one": "{{count}} session slettet",
+        "message_other": "{{count}} sessioner slettet"
+      },
+      "violationsAcknowledged": {
+        "title": "Overtrædelser Kendt",
+        "message_one": "{{count}} overtrædelse anerkendt",
+        "message_other": "{{count}} overtrædelser anerkendt"
+      },
+      "violationsDismissed": {
+        "title": "Overtrædelser Afvist",
+        "message_one": "{{count}} overtrædelse afvist",
+        "message_other": "{{count}} overtrædelser afvist"
+      },
+      "apiKeyGenerated": {
+        "title": "Api Nøgle Genereret",
+        "message": "Din nye API-nøgle er klar til brug"
+      },
+      "mobileAccessEnabled": {
+        "title": "Mobil Adgang Aktiveret",
+        "message": "Scan QR-koden med Tracearr mobil-app'en for at oprette forbindelse"
+      },
+      "mobileAccessDisabled": {
+        "title": "Mobil Adgang Deaktiveret",
+        "message": "Alle mobilsessioner er blevet tilbagekaldt"
+      },
+      "pairTokenGenerated": {
+        "title": "Par Token Genereret",
+        "message": "Scan QR-koden med din mobile enhed for at parre"
+      },
+      "displayNameUpdated": {
+        "title": "Vis Navn Opdateret"
+      },
+      "trustScoresReset": {
+        "title": "Stol På Scores Nulstil",
+        "message_one": "{{count}} bruger nulstillet til 100",
+        "message_other": "{{count}} brugere nulstillet til 100"
+      },
+      "claimCodeValidated": {
+        "title": "Anmodet kode valideret",
+        "message": "Du kan nu fortsætte med opsætning"
+      }
+    },
+    "error": {
+      "serverAddFailed": "Mislykkedes at tilføje server",
+      "serverRemoveFailed": "Mislykkedes at fjerne server",
+      "serverSyncFailed": "Synkronisering af server mislykkedes",
+      "settingsUpdateFailed": "Kunne ikke opdatere indstillinger",
+      "copyFailed": "Kunne ikke kopiere til udklipsholder",
+      "acknowledgeFailed": "Mislykkedes at anerkende overtrædelse",
+      "dismissFailed": "Mislykkedes at afvise overtrædelse",
+      "authFailed": "Godkendelse mislykkedes",
+      "webhookTestFailed": "Webhook-test mislykkedes",
+      "ruleCreateFailed": "Kunne ikke oprette regel",
+      "ruleUpdateFailed": "Kunne ikke opdatere reglen",
+      "ruleDeleteFailed": "Kunne ikke slette reglen",
+      "streamTerminateFailed": "Kunne ikke afslutte stream",
+      "serverUrlUpdateFailed": "Kunne ikke opdatere server-URL",
+      "serverUpdateFailed": "Mislykkedes at opdatere server",
+      "serverReorderFailed": "Kunne ikke omarrangere servere",
+      "sessionsDeleteFailed": "Kunne ikke slette sessioner",
+      "apiKeyGenerateFailed": "Kunne ikke generere API-nøgle",
+      "mobileAccessEnableFailed": "Mislykkedes at aktivere mobil adgang",
+      "mobileAccessDisableFailed": "Mislykkedes at deaktivere mobiladgang",
+      "pairTokenGenerateFailed": "Kunne ikke generere par token",
+      "deviceRemoveFailed": "Kunne ikke fjerne enheden",
+      "deviceRenameFailed": "Kunne ikke omdøbe enhed",
+      "sessionsRevokeFailed": "Mislykkedes at tilbagekalde sessioner",
+      "displayNameUpdateFailed": "Kunne ikke opdatere visningsnavn",
+      "trustScoresResetFailed": "Mislykkedes at nulstille trust scores",
+      "routingUpdateFailed": "Kunne ikke opdatere routing",
+      "clipboardFailed": "Kunne ikke kopiere til udklipsholder",
+      "plexUnlinkFailed": "Kunne ikke frakoble Plex konto",
+      "agentAddFailed": "Mislykkedes at tilføje agent",
+      "agentUpdateFailed": "Mislykkedes at opdatere agent",
+      "agentRemoveFailed": "Mislykkedes at fjerne agent",
+      "agentTestFailed": "Test mislykkedes",
+      "jobAlreadyRunning": "Job kører allerede",
+      "jobStartFailed": "Mislykkedes at starte job",
+      "jobLoadFailed": "Kunne ikke indlæse vedligeholdelsesjob",
+      "invalidUrl": "Ugyldig URL",
+      "plexDirectUrl": "plex.direct URLs er relæadresser, der ikke kan bruges her. Brug venligst en direkte IP-adresse eller værtsnavn i stedet.",
+      "invalidClaimCode": {
+        "title": "Ugyldig erstatningskode",
+        "message": "Tjek venligst serverens logs"
+      }
+    },
+    "warning": {
+      "jobFailed": {
+        "title": "Job Mislykkedes",
+        "message": "{{name}} stødte på en fejl"
+      }
+    },
+    "info": {
+      "streamStarted": {
+        "title": "Ny Stream Startet",
+        "message": "{{user}} begyndte at se {{media}}"
+      },
+      "streamStopped": {
+        "title": "Stream Stoppet",
+        "message": "{{user}} holdt op med at se"
+      },
+      "updateAvailable": {
+        "title": "Opdatering Tilgængelig",
+        "message": "Tracearr {{version}} er tilgængelig"
+      },
+      "serverOffline": {
+        "title": "Server Offline",
+        "message": "{{name}} er utilgængeligt"
+      },
+      "serverOnline": {
+        "title": "Server Online",
+        "message": "{{name}} er online tilbage"
+      },
+      "violationDetected": {
+        "title": "Ny Overtrædelse: {{ruleName}}",
+        "message": "{{user}} udløst {{ruleType}}"
+      }
+    }
+  },
+  "push": {
+    "violationDetected": "Deler Overtrædelse Fundet",
+    "streamStarted": "Stream Startet",
+    "streamEnded": "Stream Afsluttet",
+    "serverDown": "Serverforbindelse Mistet",
+    "serverUp": "Server Tilbage Online",
+    "newDevice": "Ny Enhed",
+    "trustScoreChanged": "Tillid Score Ændret"
+  },
+  "settings": {
+    "title": "Indstillinger For Notifikationer",
+    "allSeverity": "Alle (lav, Advarsel, Høj)",
+    "warningAndHigh": "Kun advarsel og høj",
+    "highOnly": "Kun høj sværhedsgrad",
+    "allTypes": "Alle Typer",
+    "rateLimit": "Nuværende Rate Limit Status",
+    "perMinute": "Pr. Minut",
+    "perHour": "Pr. Time",
+    "enablePushNotifications": "Aktiver Push-notifikationer",
+    "notificationEvents": "Notifikation Begivenheder",
+    "violationDetected": "Overtrædelse Registreret",
+    "violationDetectedDesc": "Når en deling overtrædelse er udløst",
+    "streamStarted": "Stream Startet",
+    "streamStartedDesc": "Når en bruger begynder at se",
+    "streamStopped": "Stream Stoppet",
+    "streamStoppedDesc": "Når en bruger stopper ser",
+    "concurrentStreams": "Samtidige Streams",
+    "concurrentStreamsDesc": "Når maks. stream grænse er overskredet",
+    "newDevice": "Ny Enhed",
+    "newDeviceDesc": "Når en ny enhed tilsluttes",
+    "trustScoreChanged": "Tillid Score Ændret",
+    "trustScoreChangedDesc": "Når en brugers tillidsscore ændres",
+    "serverDown": "Server Ned",
+    "serverDownDesc": "Når en medieserver går offline",
+    "serverUp": "Server Op",
+    "serverUpDesc": "Når en medieserver kommer tilbage online",
+    "violationFilters": "Overtrædelse Filtre",
+    "minimumSeverity": "Minimum Alvorlighed",
+    "quietHours": "Stille Timer",
+    "enableQuietHours": "Aktiver Stille Timer",
+    "overrideForCritical": "Tilsidesæt for kritisk",
+    "rateLimiting": "Begrænsning Af Sats"
+  }
+}

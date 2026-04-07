@@ -1,0 +1,60 @@
+{
+  "pair": {
+    "welcome": "Ласкаво просимо до Tracearr",
+    "addServer": "Додати сервер",
+    "connectToServer": "Підключитися до сервера",
+    "enterServerDetails": "Введіть URL-адресу вашого серверу Tracearr та токен доступу",
+    "serverUrl": "URL-адреса сервера",
+    "accessToken": "Токен доступу",
+    "scanQrCodeInstead": "Натомість скануйте QR-код",
+    "enterManually": "Введіть URL-адресу та токен вручну",
+    "cameraPermissionRequired": "Для сканування QR-кодів потрібен дозвіл на доступ до камери",
+    "scanQrInstructions": "Відкрийте налаштування → Мобільний додаток в інформаційній панелі Tracearr і відскануйте QR-код"
+  },
+  "errors": {
+    "missingFields": "Пропущені поля",
+    "pleaseEnterBothFields": "Будь ласка, введіть URL-адресу сервера та токен",
+    "invalidUrl": "Неправильна URL-адреса",
+    "serverUrlMustStartWith": "URL-адреса сервера має починатися з http:// або https://",
+    "pleaseEnterValidUrl": "Будь ласка, введіть коректний URL сервера",
+    "pairingFailed": "Помилка парування",
+    "invalidQrCode": "Недійсний QR-код",
+    "invalidQrCodeMissingData": "Невірний QR-код: відсутні дані для парування",
+    "invalidQrCodeFormat": "Невірний формат QR-коду. Будь ласка, згенеруйте новий код.",
+    "invalidQrCodeMissingUrl": "Невірний QR-код: відсутній URL сервера",
+    "invalidQrCodeMissingToken": "Невірний QR-код: відсутній токен парування",
+    "invalidServerUrlInQr": "Хибна URL-адреса сервера у QR-коді",
+    "tooManyPairingAttempts": "Занадто багато спроб створення пари. Будь ласка, зачекайте кілька хвилин.",
+    "invalidOrExpiredToken": "Некоректний або прострочений токен парування.",
+    "invalidPairingRequest": "Хибний запит на парування. Перевірте свій маркер."
+  },
+  "settings": {
+    "preferences": "Налаштування",
+    "community": "Спільнота",
+    "discord": "Discord",
+    "joinCommunity": "Приєднатися до спільноти",
+    "github": "GitHub",
+    "viewSourceCode": "Переглянути вихідний код",
+    "account": "Обліковий запис",
+    "disconnectServer": "Відключити сервер",
+    "disconnectConfirm": "Ви впевнені у тому, що хочете відключитися від{{serverName}}? Вам потрібно буде знову під'єднатися до програми.",
+    "disconnectConfirmGeneric": "Ви дійсно хочете відключитися? Вам необхідно ще раз з'єднатися з додатком.",
+    "currentlyConnected": "Currently connected to {{serverName}}"
+  },
+  "navigation": {
+    "selectServer": "Виберіть сервер",
+    "server": "Сервер",
+    "navigation": "Navigation"
+  },
+  "resources": {
+    "cpu": "CPU",
+    "ram": "RAM"
+  },
+  "notifications": {
+    "testSent": "Тестування надіслано",
+    "testFailed": "Перевірка не вдалася",
+    "failedToSendTest": "Помилка надсилання сповіщення",
+    "loadingPreferences": "Завантаження налаштувань...",
+    "unableToLoadPreferences": "Не вдалося завантажити параметри"
+  }
+}

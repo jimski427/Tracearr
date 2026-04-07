@@ -1,0 +1,60 @@
+{
+  "pair": {
+    "welcome": "Velkommen til Tracearr",
+    "addServer": "Tilføj Server",
+    "connectToServer": "Opret forbindelse til server",
+    "enterServerDetails": "Indtast din Tracearr server URL og mobil adgangstoken",
+    "serverUrl": "Server URL",
+    "accessToken": "Adgangs Token",
+    "scanQrCodeInstead": "Skan QR-koden i stedet",
+    "enterManually": "Indtast URL og Token Manuelt",
+    "cameraPermissionRequired": "Kamera-tilladelse kræves for at scanne QR-koder",
+    "scanQrInstructions": "Åbn indstillinger → Mobile App i dit Tracearr dashboard og skan QR-koden"
+  },
+  "errors": {
+    "missingFields": "Manglende Felter",
+    "pleaseEnterBothFields": "Indtast venligst både server URL og token",
+    "invalidUrl": "Ugyldig URL",
+    "serverUrlMustStartWith": "Server URL skal starte med http:// eller https://",
+    "pleaseEnterValidUrl": "Angiv en gyldig server URL",
+    "pairingFailed": "Parring Mislykkedes",
+    "invalidQrCode": "Invalid QR code",
+    "invalidQrCodeMissingData": "Ugyldig QR-kode: manglende parringsdata",
+    "invalidQrCodeFormat": "Ugyldig QR kode format. Opret venligst en ny kode.",
+    "invalidQrCodeMissingUrl": "Ugyldig QR-kode: manglende server-URL",
+    "invalidQrCodeMissingToken": "Ugyldig QR-kode: manglende parringstoken",
+    "invalidServerUrlInQr": "Ugyldig server-URL i QR-kode",
+    "tooManyPairingAttempts": "For mange parringsforsøg. Vent et par minutter.",
+    "invalidOrExpiredToken": "Ugyldigt eller udløbet parringstoken.",
+    "invalidPairingRequest": "Ugyldig parringsanmodning. Tjek dit token."
+  },
+  "settings": {
+    "preferences": "Præferencer",
+    "community": "Fællesskab",
+    "discord": "Uenighed",
+    "joinCommunity": "Deltag i fællesskabet",
+    "github": "GitHub",
+    "viewSourceCode": "Vis kildekode",
+    "account": "Konto",
+    "disconnectServer": "Afbryd Server",
+    "disconnectConfirm": "Er du sikker på, at du vil afbryde forbindelsen til \"{{serverName}}\"? Du skal parre igen for at bruge appen.",
+    "disconnectConfirmGeneric": "Er du sikker på, at du vil afbryde forbindelsen? Du skal parre igen for at bruge appen.",
+    "currentlyConnected": "I øjeblikket forbundet til {{serverName}}"
+  },
+  "navigation": {
+    "selectServer": "Vælg Server",
+    "server": "Server",
+    "navigation": "Navigation"
+  },
+  "resources": {
+    "cpu": "CPU",
+    "ram": "RAM"
+  },
+  "notifications": {
+    "testSent": "Test Sendt",
+    "testFailed": "Test Mislykkedes",
+    "failedToSendTest": "Afsendelse af testnotifikation mislykkedes",
+    "loadingPreferences": "Indlæser præferencer...",
+    "unableToLoadPreferences": "Kan ikke indlæse præferencer"
+  }
+}

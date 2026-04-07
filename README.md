@@ -12,6 +12,7 @@ This repo is a fork to add state to the rule filter. I used copilot to assist wi
 
 <p align="center">
   <a href="https://github.com/jimski427/Tracearr/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/jimski427/Tracearr/ci.yml?branch=main&style=flat-square&label=CI" alt="CI Status" /></a>
+  <a title="Crowdin" target="_blank" href="https://crowdin.com/project/tracearr"><img src="https://badges.crowdin.net/tracearr/localized.svg"></a>
   <a href="https://github.com/jimski427/Tracearr/actions/workflows/nightly.yml"><img src="https://img.shields.io/github/actions/workflow/status/jimski427/Tracearr/nightly.yml?style=flat-square&label=Nightly" alt="Nightly Build" /></a>
   <a href="https://github.com/jimski427/Tracearr/releases"><img src="https://img.shields.io/github/v/release/jimski427/Tracearr?style=flat-square&color=18D1E7" alt="Latest Release" /></a>
   <a href="https://ghcr.io/jimski427/tracearr"><img src="https://img.shields.io/badge/ghcr.io-tracearr-blue?style=flat-square&logo=docker&logoColor=white" alt="Docker" /></a>

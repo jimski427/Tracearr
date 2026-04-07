@@ -92,7 +92,7 @@ export function UserDetail() {
           <div>
             <p className="font-medium">{row.original.rule.name}</p>
             <p className="text-muted-foreground text-xs capitalize">
-              {row.original.rule.type?.replace(/_/g, ' ') ?? 'Custom Rule'}
+              {row.original.rule.type?.replace(/_/g, ' ') ?? t('rules.customRule')}
             </p>
           </div>
         ),
@@ -416,7 +416,7 @@ export function UserDetail() {
                       onClick={() => setIsEditTrustOpen(true)}
                     >
                       <Pencil className="mr-2 h-3.5 w-3.5" />
-                      Adjust Trust Score
+                      {t('userDetail.adjustTrustScore')}
                     </Button>
                   )}
                 </div>
@@ -514,7 +514,7 @@ export function UserDetail() {
                 onClick={() => setSessionsPage((p) => Math.max(1, p - 1))}
                 disabled={sessionsPage <= 1}
               >
-                Previous
+                {t('common:actions.previous')}
               </Button>
               <span className="text-muted-foreground text-sm">
                 {sessionsPage} / {sessionsTotalPages}
@@ -525,7 +525,7 @@ export function UserDetail() {
                 onClick={() => setSessionsPage((p) => Math.min(sessionsTotalPages, p + 1))}
                 disabled={sessionsPage >= sessionsTotalPages}
               >
-                Next
+                {t('common:actions.next')}
               </Button>
             </div>
           )}

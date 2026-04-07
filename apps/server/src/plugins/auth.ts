@@ -7,9 +7,9 @@ import fp from 'fastify-plugin';
 import jwt from '@fastify/jwt';
 import { eq } from 'drizzle-orm';
 import type { AuthUser } from '@tracearr/shared';
-import { REDIS_KEYS } from '@tracearr/shared';
+import { REDIS_KEYS, CACHE_TTL } from '@tracearr/shared';
 import { db } from '../db/client.js';
-import { users } from '../db/schema.js';
+import { users, mobileSessions } from '../db/schema.js';
 import { getSetting } from '../services/settings.js';
 
 // Module-level cache — populated at startup and refreshed after restore
@@ -119,6 +119,17 @@ const authPlugin: FastifyPluginAsync = async (app) => {
         if (blacklisted) {
           reply.unauthorized('Session has been revoked');
           return;
+        }
+
+        // Throttled lastSeenAt update — at most once per CACHE_TTL.MOBILE_LAST_SEEN
+        const throttleKey = REDIS_KEYS.MOBILE_LAST_SEEN(request.user.deviceId);
+        const alreadyRecent = await app.redis.get(throttleKey);
+        if (!alreadyRecent) {
+          await app.redis.set(throttleKey, '1', 'EX', CACHE_TTL.MOBILE_LAST_SEEN);
+          db.update(mobileSessions)
+            .set({ lastSeenAt: new Date() })
+            .where(eq(mobileSessions.deviceId, request.user.deviceId))
+            .catch(() => undefined);
         }
       }
     } catch {

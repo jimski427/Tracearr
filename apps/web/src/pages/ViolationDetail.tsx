@@ -72,6 +72,7 @@ function ConditionEvidenceRow({
   unitSystem: UnitSystem;
   userIdToName?: Record<string, string>;
 }) {
+  const { t } = useTranslation(['pages', 'common']);
   const label = CONDITION_FIELD_LABELS[condition.field] ?? condition.field;
   const op = OPERATOR_LABELS[condition.operator] ?? condition.operator;
 
@@ -105,7 +106,7 @@ function ConditionEvidenceRow({
         : String(condition.actual);
     }
   } else {
-    actualDisplay = 'unknown';
+    actualDisplay = t('common:labels.unknown').toLowerCase();
   }
 
   return (
@@ -129,13 +130,16 @@ function ConditionEvidenceRow({
           <span
             className={`text-sm ${condition.matched ? 'font-semibold text-red-600' : 'text-muted-foreground'}`}
           >
-            Actual: {actualDisplay}
+            {t('violations.detail.actual')}: {actualDisplay}
             {unitSuffix}
           </span>
           {condition.relatedSessionIds && condition.relatedSessionIds.length > 0 && (
             <span className="text-muted-foreground text-xs">
-              ({condition.relatedSessionIds.length} related session
-              {condition.relatedSessionIds.length !== 1 ? 's' : ''})
+              (
+              {t('violations.detail.relatedSessions', {
+                count: condition.relatedSessionIds.length,
+              })}
+              )
             </span>
           )}
         </div>
@@ -153,6 +157,7 @@ function EvidenceGroupCard({
   unitSystem: UnitSystem;
   userIdToName?: Record<string, string>;
 }) {
+  const { t } = useTranslation(['pages', 'common']);
   const matchedCount = group.conditions.filter((c) => c.matched).length;
   const totalCount = group.conditions.length;
 
@@ -162,10 +167,10 @@ function EvidenceGroupCard({
         <CardTitle className="flex items-center justify-between text-sm">
           <span className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
-            Condition Group {group.groupIndex + 1}
+            {t('violations.detail.conditionGroup', { index: group.groupIndex + 1 })}
           </span>
           <Badge variant={group.matched ? 'destructive' : 'secondary'} className="text-xs">
-            {matchedCount}/{totalCount} matched
+            {t('violations.detail.matched', { matched: matchedCount, total: totalCount })}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -527,7 +532,7 @@ export function ViolationDetail() {
         <div className="space-y-4">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
             <Shield className="h-5 w-5" />
-            Condition Evidence
+            {t('violations.detail.conditionEvidence')}
           </h2>
           <div className="grid gap-4 lg:grid-cols-2">
             {violation.evidence.map((group) => (

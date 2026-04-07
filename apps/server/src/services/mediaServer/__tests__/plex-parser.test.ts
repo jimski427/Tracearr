@@ -283,6 +283,64 @@ describe('Plex Session Parser', () => {
       expect(parseSessionsResponse({ MediaContainer: {} })).toEqual([]);
       expect(parseSessionsResponse(null)).toEqual([]);
     });
+
+    it('should use composite key to resolve correct media version per session (issue #686)', () => {
+      // Two sessions transcoding different versions of the same item (same ratingKey)
+      const transcodeSession = { videoDecision: 'transcode', audioDecision: 'copy' };
+      const response = {
+        MediaContainer: {
+          Metadata: [
+            {
+              sessionKey: 'session-a',
+              ratingKey: '100',
+              title: 'Movie',
+              type: 'movie',
+              User: { id: '1', title: 'Alice' },
+              Player: { title: 'TV', machineIdentifier: 'tv1' },
+              TranscodeSession: transcodeSession,
+              Media: [{ id: 200, selected: '1' }],
+            },
+            {
+              sessionKey: 'session-b',
+              ratingKey: '100',
+              title: 'Movie',
+              type: 'movie',
+              User: { id: '2', title: 'Bob' },
+              Player: { title: 'Phone', machineIdentifier: 'phone1' },
+              TranscodeSession: transcodeSession,
+              Media: [{ id: 300 }],
+            },
+          ],
+        },
+      };
+
+      const originalMedia4K: PlexOriginalMedia = {
+        bitrate: 50000,
+        videoWidth: 3840,
+        videoHeight: 2160,
+        videoCodec: 'HEVC',
+      };
+      const originalMedia1080p: PlexOriginalMedia = {
+        bitrate: 10000,
+        videoWidth: 1920,
+        videoHeight: 1080,
+        videoCodec: 'H264',
+      };
+
+      const originalMediaMap = new Map<string, PlexOriginalMedia>([
+        ['100:200', originalMedia4K],
+        ['100:300', originalMedia1080p],
+      ]);
+
+      const sessions = parseSessionsResponse(response, originalMediaMap);
+
+      expect(sessions).toHaveLength(2);
+      const sessionA = sessions.find((s) => s.sessionKey === 'session-a');
+      const sessionB = sessions.find((s) => s.sessionKey === 'session-b');
+
+      expect(sessionA?.quality.videoWidth).toBe(3840);
+      expect(sessionB?.quality.videoWidth).toBe(1920);
+    });
   });
 });
 
@@ -991,6 +1049,94 @@ describe('Plex Original Media Metadata Parser', () => {
       expect(result!.videoBitrate).toBe(9500);
       expect(result!.videoCodec).toBe('H264');
     });
+
+    it('should select Media by targetMediaId when provided', () => {
+      const rawResponse = {
+        MediaContainer: {
+          Metadata: [
+            {
+              Media: [
+                {
+                  id: 456,
+                  bitrate: 50000,
+                  selected: '1',
+                  Part: [
+                    {
+                      Stream: [
+                        { streamType: 1, bitrate: 49000, codec: 'hevc', width: 3840, height: 2160 },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  id: 789,
+                  bitrate: 10000,
+                  Part: [
+                    {
+                      Stream: [
+                        { streamType: 1, bitrate: 9500, codec: 'h264', width: 1920, height: 1080 },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      const result = parseMediaMetadataResponse(rawResponse, '789');
+
+      expect(result).not.toBeNull();
+      expect(result!.bitrate).toBe(10000);
+      expect(result!.videoBitrate).toBe(9500);
+      expect(result!.videoCodec).toBe('H264');
+      expect(result!.videoWidth).toBe(1920);
+      expect(result!.videoHeight).toBe(1080);
+    });
+
+    it('should fall back to selected=1 when targetMediaId does not match', () => {
+      const rawResponse = {
+        MediaContainer: {
+          Metadata: [
+            {
+              Media: [
+                {
+                  id: 456,
+                  bitrate: 50000,
+                  selected: '1',
+                  Part: [
+                    {
+                      Stream: [
+                        { streamType: 1, bitrate: 49000, codec: 'hevc', width: 3840, height: 2160 },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  id: 789,
+                  bitrate: 10000,
+                  Part: [
+                    {
+                      Stream: [
+                        { streamType: 1, bitrate: 9500, codec: 'h264', width: 1920, height: 1080 },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      const result = parseMediaMetadataResponse(rawResponse, '999');
+
+      expect(result).not.toBeNull();
+      // Falls back to selected=1 (id: 456, 4K)
+      expect(result!.bitrate).toBe(50000);
+      expect(result!.videoWidth).toBe(3840);
+    });
   });
 
   describe('getTranscodingSessionRatingKeys', () => {
@@ -1015,10 +1161,11 @@ describe('Plex Original Media Metadata Parser', () => {
       };
 
       const keys = getTranscodingSessionRatingKeys(sessionsResponse);
+      const ratingKeys = keys.map((k) => k.ratingKey);
 
-      expect(keys).toContain('123'); // Video transcoding
-      expect(keys).not.toContain('456'); // Direct play
-      expect(keys).toContain('789'); // Audio transcoding
+      expect(ratingKeys).toContain('123'); // Video transcoding
+      expect(ratingKeys).not.toContain('456'); // Direct play
+      expect(ratingKeys).toContain('789'); // Audio transcoding
       expect(keys).toHaveLength(2);
     });
 
@@ -1041,6 +1188,34 @@ describe('Plex Original Media Metadata Parser', () => {
       expect(getTranscodingSessionRatingKeys({})).toEqual([]);
       expect(getTranscodingSessionRatingKeys({ MediaContainer: {} })).toEqual([]);
       expect(getTranscodingSessionRatingKeys(null)).toEqual([]);
+    });
+
+    it('should extract sessionMediaId from the selected Media element', () => {
+      const sessionsResponse = {
+        MediaContainer: {
+          Metadata: [
+            {
+              ratingKey: '123',
+              TranscodeSession: { videoDecision: 'transcode', audioDecision: 'copy' },
+              Media: [
+                { id: 456, selected: '1' },
+                { id: 789 },
+              ],
+            },
+            {
+              ratingKey: '999',
+              TranscodeSession: { videoDecision: 'transcode', audioDecision: 'copy' },
+              // No Media array
+            },
+          ],
+        },
+      };
+
+      const entries = getTranscodingSessionRatingKeys(sessionsResponse);
+
+      expect(entries).toHaveLength(2);
+      expect(entries[0]).toEqual({ ratingKey: '123', sessionMediaId: '456' });
+      expect(entries[1]).toEqual({ ratingKey: '999', sessionMediaId: undefined });
     });
   });
 

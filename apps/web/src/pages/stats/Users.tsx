@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Users as UsersIcon, Trophy } from 'lucide-react';
 import { TimeRangePicker } from '@/components/ui/time-range-picker';
 import { UserCard, UserRow } from '@/components/users';
@@ -7,6 +8,7 @@ import { useServer } from '@/hooks/useServer';
 import { useTimeRange } from '@/hooks/useTimeRange';
 
 export function StatsUsers() {
+  const { t } = useTranslation(['pages', 'common']);
   const { value: timeRange, setValue: setTimeRange, apiParams } = useTimeRange();
   const { selectedServerId } = useServer();
   const topUsers = useTopUsers(apiParams, selectedServerId);
@@ -58,8 +60,8 @@ export function StatsUsers() {
       ) : users.length === 0 ? (
         <div className="rounded-xl border border-dashed p-12 text-center">
           <UsersIcon className="text-muted-foreground/50 mx-auto h-16 w-16" />
-          <h3 className="mt-4 text-lg font-semibold">No activity yet</h3>
-          <p className="text-muted-foreground mt-1">Start streaming to see your top users here</p>
+          <h3 className="mt-4 text-lg font-semibold">{t('statsUsers.noActivity')}</h3>
+          <p className="text-muted-foreground mt-1">{t('statsUsers.noActivityDesc')}</p>
         </div>
       ) : (
         <>
@@ -67,7 +69,7 @@ export function StatsUsers() {
           <section>
             <div className="mb-4 flex items-center gap-2">
               <Trophy className="text-primary h-5 w-5" />
-              <h2 className="text-lg font-semibold">Top 3</h2>
+              <h2 className="text-lg font-semibold">{t('statsUsers.top3')}</h2>
             </div>
 
             {/* Key prop forces re-render on period change for animations */}
@@ -139,7 +141,7 @@ export function StatsUsers() {
             <section>
               <div className="mb-4 flex items-center gap-2">
                 <UsersIcon className="text-primary h-5 w-5" />
-                <h2 className="text-lg font-semibold">Runners Up</h2>
+                <h2 className="text-lg font-semibold">{t('statsUsers.runnersUp')}</h2>
               </div>
 
               {/* Key prop forces re-render on period change for animations */}

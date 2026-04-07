@@ -1,0 +1,60 @@
+{
+  "pair": {
+    "welcome": "Tervetuloa Tracearriin",
+    "addServer": "Lisää Palvelin",
+    "connectToServer": "Yhdistä palvelimeen",
+    "enterServerDetails": "Syötä Tracearr palvelimen URL ja mobiili käyttötunnus",
+    "serverUrl": "Palvelimen URL",
+    "accessToken": "Käyttöoikeus Pääsymerkki",
+    "scanQrCodeInstead": "Skannaa QR-koodi Sen sijaan",
+    "enterManually": "Syötä URL ja tunniste manuaalisesti",
+    "cameraPermissionRequired": "Kameran käyttöoikeus vaaditaan QR-koodien skannaamiseen",
+    "scanQrInstructions": "Avaa asetukset → Mobiilisovellus Tracearr kojelaudalla ja skannaa QR-koodi"
+  },
+  "errors": {
+    "missingFields": "Puuttuvat Kentät",
+    "pleaseEnterBothFields": "Syötä sekä palvelimen URL-osoite että tunnus",
+    "invalidUrl": "Virheellinen URL",
+    "serverUrlMustStartWith": "Palvelimen URL-osoitteen on alettava http:// tai http://",
+    "pleaseEnterValidUrl": "Anna kelvollinen palvelimen URL-osoite",
+    "pairingFailed": "Paritus Epäonnistui",
+    "invalidQrCode": "Invalid QR code",
+    "invalidQrCodeMissingData": "Virheellinen QR-koodi: puuttuvat pariutumistiedot",
+    "invalidQrCodeFormat": "Virheellinen QR-koodin muoto. Ole hyvä ja luo uusi koodi.",
+    "invalidQrCodeMissingUrl": "Virheellinen QR-koodi: puuttuva palvelimen URL",
+    "invalidQrCodeMissingToken": "Virheellinen QR-koodi: puuttuu pariliitos",
+    "invalidServerUrlInQr": "Virheellinen palvelimen URL QR-koodissa",
+    "tooManyPairingAttempts": "Liian monta pariutumisyritystä. Odota muutama minuutti.",
+    "invalidOrExpiredToken": "Virheellinen tai vanhentunut pariliitos token.",
+    "invalidPairingRequest": "Virheellinen pariutumispyyntö. Tarkista token."
+  },
+  "settings": {
+    "preferences": "Asetukset",
+    "community": "Yhteisö",
+    "discord": "Discord",
+    "joinCommunity": "Liity yhteisöön",
+    "github": "GitHub",
+    "viewSourceCode": "Näytä lähdekoodi",
+    "account": "Tili",
+    "disconnectServer": "Katkaise Palvelin",
+    "disconnectConfirm": "Oletko varma, että haluat katkaista yhteyden \"{{serverName}}\"? Sinun täytyy muodostaa pari uudelleen käyttääksesi sovellusta.",
+    "disconnectConfirmGeneric": "Oletko varma, että haluat katkaista yhteyden? Sinun täytyy muodostaa pari uudelleen käyttääksesi sovellusta.",
+    "currentlyConnected": "Tällä hetkellä yhdistetty {{serverName}}"
+  },
+  "navigation": {
+    "selectServer": "Valitse Palvelin",
+    "server": "Palvelin",
+    "navigation": "Navigation"
+  },
+  "resources": {
+    "cpu": "Suoritin",
+    "ram": "RAM"
+  },
+  "notifications": {
+    "testSent": "Testi Lähetetty",
+    "testFailed": "Testi Epäonnistui",
+    "failedToSendTest": "Testi-ilmoituksen lähettäminen epäonnistui",
+    "loadingPreferences": "Ladataan asetuksia...",
+    "unableToLoadPreferences": "Asetuksia ei voi ladata"
+  }
+}

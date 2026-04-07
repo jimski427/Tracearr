@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Database, HardDrive, Film, Tv, Calendar, TrendingUp } from 'lucide-react';
 import type { GrowthDataPoint } from '@tracearr/shared';
 import { StatCard, formatNumber } from '@/components/ui/stat-card';
@@ -30,6 +31,7 @@ function formatLastUpdated(dateStr: string | null | undefined): string {
 }
 
 export function LibraryOverview() {
+  const { t } = useTranslation(['pages', 'common']);
   const { selectedServerId } = useServer();
   const { value: timeRange, setValue: setTimeRange } = useTimeRange();
   const status = useLibraryStatus(selectedServerId);
@@ -74,17 +76,17 @@ export function LibraryOverview() {
   const periodLabel = useMemo(() => {
     switch (timeRange.period) {
       case 'week':
-        return 'this week';
+        return t('library.overview.thisWeek');
       case 'month':
-        return 'this month';
+        return t('library.overview.thisMonth');
       case 'year':
-        return 'this year';
+        return t('library.overview.thisYear');
       case 'all':
-        return 'all time';
+        return t('common:time.allTime').toLowerCase();
       default:
-        return 'this period';
+        return t('library.overview.thisPeriod');
     }
-  }, [timeRange.period]);
+  }, [timeRange.period, t]);
 
   // Show loading skeleton
   if (isLoading) {
@@ -93,8 +95,8 @@ export function LibraryOverview() {
         {/* Header with time range picker */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Library</h1>
-            <p className="text-muted-foreground text-sm">Library health and growth metrics</p>
+            <h1 className="text-2xl font-bold">{t('library.title')}</h1>
+            <p className="text-muted-foreground text-sm">{t('library.overview.description')}</p>
           </div>
           <TimeRangePicker value={timeRange} onChange={setTimeRange} />
         </div>
@@ -110,14 +112,14 @@ export function LibraryOverview() {
         {/* Header with time range picker */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Library</h1>
-            <p className="text-muted-foreground text-sm">Library health and growth metrics</p>
+            <h1 className="text-2xl font-bold">{t('library.title')}</h1>
+            <p className="text-muted-foreground text-sm">{t('library.overview.description')}</p>
           </div>
           <TimeRangePicker value={timeRange} onChange={setTimeRange} />
         </div>
         <ErrorState
-          title="Failed to load library statistics"
-          message={error?.message ?? 'Could not fetch library data. Please try again.'}
+          title={t('library.overview.failedToLoad')}
+          message={error?.message ?? t('library.overview.failedToLoadDesc')}
           onRetry={refetch}
         />
       </div>
@@ -134,8 +136,8 @@ export function LibraryOverview() {
         {/* Header with time range picker */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Library</h1>
-            <p className="text-muted-foreground text-sm">Library health and growth metrics</p>
+            <h1 className="text-2xl font-bold">{t('library.title')}</h1>
+            <p className="text-muted-foreground text-sm">{t('library.overview.description')}</p>
           </div>
           <TimeRangePicker value={timeRange} onChange={setTimeRange} />
         </div>
@@ -153,11 +155,13 @@ export function LibraryOverview() {
       {/* Header with last updated and time range picker */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Library</h1>
-          <p className="text-muted-foreground text-sm">Library health and growth metrics</p>
+          <h1 className="text-2xl font-bold">{t('library.title')}</h1>
+          <p className="text-muted-foreground text-sm">{t('library.overview.description')}</p>
           <div className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
             <Calendar className="h-3 w-3" />
-            <span>Last updated: {formatLastUpdated(stats?.asOf)}</span>
+            <span>
+              {t('library.overview.lastUpdated')} {formatLastUpdated(stats?.asOf)}
+            </span>
           </div>
         </div>
         <TimeRangePicker value={timeRange} onChange={setTimeRange} />
@@ -167,22 +171,34 @@ export function LibraryOverview() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard
           icon={Database}
-          label="Total Items"
+          label={t('library.overview.totalItems')}
           value={formatNumber(stats?.totalItems ?? 0)}
           subValue={periodChangeLabel}
           isLoading={growth.isLoading}
         />
-        <StatCard icon={HardDrive} label="Total Size" value={formatBytes(stats?.totalSizeBytes)} />
-        <StatCard icon={Film} label="Movies" value={formatNumber(stats?.movieCount ?? 0)} />
+        <StatCard
+          icon={HardDrive}
+          label={t('debug.totalSize')}
+          value={formatBytes(stats?.totalSizeBytes)}
+        />
+        <StatCard
+          icon={Film}
+          label={t('common:media.movie_plural')}
+          value={formatNumber(stats?.movieCount ?? 0)}
+        />
         <StatCard
           icon={Tv}
-          label="Episodes"
+          label={t('common:media.episode_plural')}
           value={formatNumber(stats?.episodeCount ?? 0)}
-          subValue={stats?.showCount ? `${formatNumber(stats.showCount)} shows` : undefined}
+          subValue={
+            stats?.showCount
+              ? `${formatNumber(stats.showCount)} ${t('library.overview.shows')}`
+              : undefined
+          }
         />
         <StatCard
           icon={TrendingUp}
-          label="Added"
+          label={t('library.overview.added')}
           value={`+${formatNumber(periodChanges.total)}`}
           subValue={periodLabel}
           isLoading={growth.isLoading}
@@ -192,7 +208,9 @@ export function LibraryOverview() {
       {/* Library Growth */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">Library Growth</CardTitle>
+          <CardTitle className="text-base font-medium">
+            {t('library.overview.libraryGrowth')}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <LibraryGrowthChart

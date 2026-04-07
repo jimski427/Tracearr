@@ -58,13 +58,14 @@ type ThemeMode = 'light' | 'dark' | 'system';
 const DEFAULT_THEME: ThemeMode = 'dark';
 const DEFAULT_HUE = 187; // Cyan
 
-const THEME_MODES: { value: ThemeMode; label: string; icon: typeof Sun; isDefault?: boolean }[] = [
-  { value: 'light', label: 'Light', icon: Sun },
-  { value: 'dark', label: 'Dark', icon: Moon, isDefault: true },
-  { value: 'system', label: 'System', icon: Monitor },
+const THEME_MODES = [
+  { value: 'light' as const, labelKey: 'general.themeLight' as const, icon: Sun },
+  { value: 'dark' as const, labelKey: 'general.themeDark' as const, icon: Moon, isDefault: true },
+  { value: 'system' as const, labelKey: 'general.themeSystem' as const, icon: Monitor },
 ];
 
 function ApiKeyCard() {
+  const { t } = useTranslation(['settings', 'common', 'notifications']);
   const { data: apiKeyData, isLoading } = useApiKey();
   const regenerateApiKey = useRegenerateApiKey();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -76,9 +77,9 @@ function ApiKeyCard() {
     if (token) {
       try {
         await navigator.clipboard.writeText(token);
-        toast.success('Copied to clipboard');
+        toast.success(t('notifications:toast.success.copiedToClipboard.title'));
       } catch {
-        toast.error('Failed to copy to clipboard');
+        toast.error(t('notifications:toast.error.copyFailed'));
       }
     }
   };
@@ -104,17 +105,14 @@ function ApiKeyCard() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <KeyRound className="h-5 w-5" />
-                API Key
+                {t('common:labels.apiKey')}
               </CardTitle>
-              <CardDescription>
-                Access the Tracearr API for third-party integrations like Homarr, Home Assistant,
-                etc.
-              </CardDescription>
+              <CardDescription>{t('general.apiKeyDesc')}</CardDescription>
             </div>
             <RouterLink to="/api-docs">
               <Button variant="outline" size="sm" className="gap-1.5">
                 <ExternalLink className="h-3.5 w-3.5" />
-                API Docs
+                {t('general.apiDocs')}
               </Button>
             </RouterLink>
           </div>
@@ -128,7 +126,7 @@ function ApiKeyCard() {
                 <Input
                   readOnly
                   value={token ?? ''}
-                  placeholder="No API key generated"
+                  placeholder={t('general.noApiKeyGenerated')}
                   className="font-mono text-sm"
                 />
                 <Button
@@ -136,16 +134,14 @@ function ApiKeyCard() {
                   size="icon"
                   onClick={handleCopy}
                   disabled={!hasKey}
-                  title="Copy to clipboard"
+                  title={t('general.copyToClipboard')}
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground text-sm">
-                  {hasKey
-                    ? 'Your API key grants full read access to your Tracearr data.'
-                    : 'Generate an API key to enable external integrations.'}
+                  {hasKey ? t('general.apiKeyReadAccess') : t('general.generateApiKeyPrompt')}
                 </p>
                 <Button
                   variant={hasKey ? 'outline' : 'default'}
@@ -158,7 +154,7 @@ function ApiKeyCard() {
                   ) : (
                     <RefreshCw className="mr-2 h-4 w-4" />
                   )}
-                  {hasKey ? 'Regenerate' : 'Generate Key'}
+                  {hasKey ? t('general.regenerate') : t('general.generateKey')}
                 </Button>
               </div>
             </div>
@@ -169,9 +165,9 @@ function ApiKeyCard() {
       <ConfirmDialog
         open={showConfirm}
         onOpenChange={setShowConfirm}
-        title="Regenerate API Key?"
-        description="This will invalidate your current API key. Any integrations using the old key will stop working."
-        confirmLabel="Regenerate"
+        title={t('general.regenerateApiKey')}
+        description={t('general.regenerateApiKeyDesc')}
+        confirmLabel={t('general.regenerate')}
         onConfirm={confirmRegenerate}
       />
     </>
@@ -258,6 +254,7 @@ function TimeFormatField() {
 }
 
 export function GeneralSettings() {
+  const { t } = useTranslation(['settings', 'common']);
   const { data: settings, isLoading } = useSettings();
   const { theme, setTheme, accentHue, setAccentHue } = useTheme();
 
@@ -326,9 +323,9 @@ export function GeneralSettings() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Palette className="h-5 w-5" />
-                Appearance
+                {t('general.appearance')}
               </CardTitle>
-              <CardDescription>Customize the look and feel of Tracearr</CardDescription>
+              <CardDescription>{t('general.appearanceDesc')}</CardDescription>
             </div>
             {!isDefaultTheme && (
               <Button
@@ -338,7 +335,7 @@ export function GeneralSettings() {
                 className="text-muted-foreground hover:text-foreground gap-1.5"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                Reset
+                {t('common:actions.reset')}
               </Button>
             )}
           </div>
@@ -347,10 +344,10 @@ export function GeneralSettings() {
           {/* Mode Selection */}
           <div className="space-y-2">
             <label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Theme
+              {t('general.theme')}
             </label>
             <div className="flex gap-2">
-              {THEME_MODES.map(({ value, label, icon: Icon, isDefault: isDefaultMode }) => (
+              {THEME_MODES.map(({ value, labelKey, icon: Icon, isDefault: isDefaultMode }) => (
                 <Button
                   key={value}
                   variant={theme === value ? 'default' : 'outline'}
@@ -362,8 +359,10 @@ export function GeneralSettings() {
                   onClick={() => setTheme(value)}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{label}</span>
-                  {isDefaultMode && <span className="text-[10px] opacity-60">(default)</span>}
+                  <span>{t(labelKey)}</span>
+                  {isDefaultMode && (
+                    <span className="text-[10px] opacity-60">{t('general.default')}</span>
+                  )}
                 </Button>
               ))}
             </div>
@@ -372,7 +371,7 @@ export function GeneralSettings() {
           {/* Accent Color Selection */}
           <div className="space-y-2">
             <label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-              Accent Color
+              {t('general.accentColor')}
             </label>
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
               {ACCENT_PRESETS.map((preset) => {
@@ -418,7 +417,7 @@ export function GeneralSettings() {
                 );
               })}
             </div>
-            <p className="text-muted-foreground text-[10px]">* Cyan is the default accent color</p>
+            <p className="text-muted-foreground text-[10px]">{t('general.cyanDefault')}</p>
           </div>
         </CardContent>
       </Card>
@@ -428,21 +427,21 @@ export function GeneralSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <SettingsIcon className="h-5 w-5" />
-            Application
+            {t('general.application')}
           </CardTitle>
-          <CardDescription>Configure basic application settings</CardDescription>
+          <CardDescription>{t('general.applicationDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <FieldGroup>
             <AutosaveSelectField
               id="unitSystem"
-              label="Unit System"
-              description="Choose how distances and speeds are displayed"
+              label={t('general.unitSystem')}
+              description={t('general.unitSystemDesc')}
               value={(unitSystemField.value as string) ?? 'metric'}
               onChange={(v) => unitSystemField.setValue(v as 'metric' | 'imperial')}
               options={[
-                { value: 'metric', label: 'Metric (km, km/h)' },
-                { value: 'imperial', label: 'Imperial (mi, mph)' },
+                { value: 'metric', label: t('general.metric') },
+                { value: 'imperial', label: t('general.imperial') },
               ]}
               status={unitSystemField.status}
               errorMessage={unitSystemField.errorMessage}
@@ -456,8 +455,8 @@ export function GeneralSettings() {
 
             <AutosaveSwitchField
               id="pollerEnabled"
-              label="Session Sync"
-              description="Enable session tracking for your media servers"
+              label={t('general.sessionSync')}
+              description={t('general.sessionSyncDesc')}
               checked={pollerEnabledField.value ?? true}
               onChange={(v) => pollerEnabledField.setValue(v)}
               status={pollerEnabledField.status}
@@ -468,13 +467,13 @@ export function GeneralSettings() {
 
             <AutosaveNumberField
               id="pollerIntervalMs"
-              label="Sync Interval"
-              description="Polling frequency for Jellyfin/Emby (5-300 seconds)"
+              label={t('general.syncInterval')}
+              description={t('general.syncIntervalDesc')}
               value={intervalSeconds}
               onChange={handleIntervalChange}
               min={5}
               max={300}
-              suffix="sec"
+              suffix={t('general.syncIntervalSuffix')}
               disabled={!(pollerEnabledField.value ?? true)}
               status={pollerIntervalField.status}
               errorMessage={pollerIntervalField.errorMessage}
@@ -484,19 +483,17 @@ export function GeneralSettings() {
 
             <div className="bg-muted/50 space-y-2 rounded-lg p-4">
               <p className="text-muted-foreground text-sm">
-                <strong>Plex:</strong> Uses real-time updates via SSE. Polling is only used as a
-                fallback if the connection fails.
+                <strong>Plex:</strong> {t('general.plexSseNote')}
               </p>
               <p className="text-muted-foreground text-sm">
-                <strong>Jellyfin/Emby:</strong> Uses the sync interval above for session detection.
-                Lower values provide faster updates but increase server load.
+                <strong>Jellyfin/Emby:</strong> {t('general.jellyfinPollingNote')}
               </p>
             </div>
 
             <AutosaveSwitchField
               id="usePlexGeoip"
-              label="Enhanced GeoIP Lookup"
-              description="Use Plex's GeoIP service for more accurate location data. When enabled, IP addresses are sent to plex.tv for lookup. Local MaxMind database is used as fallback."
+              label={t('general.enhancedGeoIP')}
+              description={t('general.enhancedGeoIPDesc')}
               checked={usePlexGeoipField.value ?? false}
               onChange={(v) => usePlexGeoipField.setValue(v)}
               status={usePlexGeoipField.status}
@@ -513,35 +510,30 @@ export function GeneralSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            External Access
+            {t('general.externalAccess')}
           </CardTitle>
-          <CardDescription>
-            Configure how external devices (like mobile apps) connect to your server
-          </CardDescription>
+          <CardDescription>{t('general.externalAccessDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <FieldGroup>
             <Field>
               <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="externalUrl">External URL</FieldLabel>
+                <FieldLabel htmlFor="externalUrl">{t('general.externalUrl')}</FieldLabel>
                 <SaveStatusIndicator status={externalUrlField.status} />
               </div>
               <div className="flex gap-2">
                 <Input
                   id="externalUrl"
-                  placeholder="https://tracearr.example.com"
+                  placeholder={t('general.externalUrlPlaceholder')}
                   value={externalUrlField.value ?? ''}
                   onChange={(e) => externalUrlField.setValue(e.target.value)}
                   aria-invalid={externalUrlField.status === 'error'}
                 />
                 <Button variant="outline" onClick={handleDetectUrl}>
-                  Detect
+                  {t('general.detect')}
                 </Button>
               </div>
-              <FieldDescription>
-                The URL that external devices should use to reach this server. Used for QR codes and
-                mobile app pairing.
-              </FieldDescription>
+              <FieldDescription>{t('general.externalUrlDesc')}</FieldDescription>
               {externalUrlField.status === 'error' && externalUrlField.errorMessage && (
                 <div className="flex items-center justify-between">
                   <FieldError>{externalUrlField.errorMessage}</FieldError>
@@ -553,7 +545,7 @@ export function GeneralSettings() {
                       onClick={externalUrlField.retry}
                       className="h-6 px-2 text-xs"
                     >
-                      Retry
+                      {t('common:actions.retry')}
                     </Button>
                     <Button
                       type="button"
@@ -562,7 +554,7 @@ export function GeneralSettings() {
                       onClick={externalUrlField.reset}
                       className="h-6 px-2 text-xs"
                     >
-                      Reset
+                      {t('common:actions.reset')}
                     </Button>
                   </div>
                 </div>
@@ -570,21 +562,13 @@ export function GeneralSettings() {
               {isLocalhost && (
                 <div className="flex items-start gap-2 rounded-lg bg-yellow-500/10 p-3 text-sm text-yellow-600 dark:text-yellow-400">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>
-                    Localhost URLs only work when your phone is on the same machine. Use your local
-                    IP (e.g., http://192.168.1.x:3000) for LAN access, or set up a domain for remote
-                    access.
-                  </span>
+                  <span>{t('general.localhostWarning')}</span>
                 </div>
               )}
               {isHttp && (
                 <div className="flex items-start gap-2 rounded-lg bg-yellow-500/10 p-3 text-sm text-yellow-600 dark:text-yellow-400">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>
-                    iOS requires HTTPS for non-local connections. HTTP will work on local networks
-                    but may fail for Tailscale or remote access. Consider using HTTPS with a reverse
-                    proxy.
-                  </span>
+                  <span>{t('general.iosHttpWarning')}</span>
                 </div>
               )}
             </Field>

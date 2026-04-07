@@ -8,7 +8,8 @@ export function useMobileConfig() {
   return useQuery({
     queryKey: ['mobile', 'config'],
     queryFn: api.mobile.get,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60, // 1 minute
+    refetchInterval: 1000 * 60, // poll every 60s for device activity
   });
 }
 
