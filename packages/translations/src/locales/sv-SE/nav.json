@@ -1,0 +1,22 @@
+{
+  "dashboard": "Instrumentpanel",
+  "map": "Karta",
+  "history": "Historik",
+  "stats": "Statistik",
+  "activity": "Aktivitet",
+  "library": "Bibliotek",
+  "users": "Användare",
+  "rules": "Regler",
+  "violations": "Överträdelser",
+  "alerts": "Varningar",
+  "settings": "Inställningar",
+  "overview": "Översikt",
+  "quality": "Kvalitet",
+  "storage": "Lagring",
+  "watch": "Titta",
+  "performance": "Prestation",
+  "devices": "Enheter",
+  "bandwidth": "Bandbredd",
+  "jobs": "Jobb",
+  "accessControl": "Åtkomstkontroll"
+}

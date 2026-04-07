@@ -40,6 +40,35 @@ if [ -n "$TZ" ] && [ "$TZ" != "UTC" ]; then
 fi
 
 # =============================================================================
+# Resolve _FILE env vars (Docker Secrets support)
+# =============================================================================
+for var in DATABASE_URL REDIS_URL JWT_SECRET COOKIE_SECRET ENCRYPTION_KEY; do
+    file_var="${var}_FILE"
+    file_path=$(printenv "$file_var" 2>/dev/null) || file_path=''
+    current_val=$(printenv "$var" 2>/dev/null) || current_val=''
+
+    [ -z "$file_path" ] && continue
+
+    if [ -n "$current_val" ]; then
+        warn "Both $var and ${file_var} are set; using $var"
+    elif [ ! -f "$file_path" ]; then
+        error "${file_var}=${file_path} but file not found"
+        exit 1
+    elif [ ! -r "$file_path" ]; then
+        error "${file_var}=${file_path} exists but is not readable"
+        exit 1
+    else
+        val=$(tr -d '\r' < "$file_path")
+        if [ -z "$val" ]; then
+            error "${file_var} file is empty: ${file_path}"
+            exit 1
+        fi
+        export "$var=$val"
+        log "Loaded $var from ${file_var}"
+    fi
+done
+
+# =============================================================================
 # Generate secrets if not provided
 # =============================================================================
 mkdir -p /data/tracearr

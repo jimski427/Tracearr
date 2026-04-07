@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Smartphone, Monitor, CheckCircle2, ArrowRightLeft, Users } from 'lucide-react';
 import { formatMediaTech } from '@tracearr/shared';
 import { Link } from 'react-router';
@@ -53,6 +54,7 @@ function getProgressTextColor(pct: number): string {
 }
 
 export function StatsDevices() {
+  const { t } = useTranslation(['pages', 'common']);
   const { value: timeRange, setValue: setTimeRange, apiParams } = useTimeRange();
   const { selectedServerId } = useServer();
 
@@ -84,10 +86,8 @@ export function StatsDevices() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Device Compatibility</h1>
-          <p className="text-muted-foreground text-sm">
-            See which devices direct play vs transcode each codec
-          </p>
+          <h1 className="text-2xl font-bold">{t('devices.title')}</h1>
+          <p className="text-muted-foreground text-sm">{t('devices.description')}</p>
         </div>
         <TimeRangePicker value={timeRange} onChange={setTimeRange} />
       </div>
@@ -96,26 +96,26 @@ export function StatsDevices() {
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard
           icon={Smartphone}
-          label="Total Sessions"
+          label={t('common:labels.totalSessions')}
           value={summary?.totalSessions.toLocaleString() ?? 0}
           isLoading={compatibility.isLoading}
         />
         <StatCard
           icon={CheckCircle2}
-          label="Direct Play Rate"
+          label={t('devices.directPlayRate')}
           value={`${summary?.directPlayPct ?? 0}%`}
-          subValue="Video + audio"
+          subValue={t('devices.videoAndAudio')}
           isLoading={compatibility.isLoading}
         />
         <StatCard
           icon={Monitor}
-          label="Unique Devices"
+          label={t('devices.uniqueDevices')}
           value={summary?.uniqueDevices ?? 0}
           isLoading={compatibility.isLoading}
         />
         <StatCard
           icon={ArrowRightLeft}
-          label="Unique Codecs"
+          label={t('devices.uniqueCodecs')}
           value={summary?.uniqueCodecs ?? 0}
           isLoading={compatibility.isLoading}
         />
@@ -126,8 +126,8 @@ export function StatsDevices() {
         {/* Device Health Rankings */}
         <Card>
           <CardHeader>
-            <CardTitle>Device Health</CardTitle>
-            <CardDescription>Direct play rate by device type</CardDescription>
+            <CardTitle>{t('devices.deviceHealth')}</CardTitle>
+            <CardDescription>{t('devices.deviceHealthDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {deviceHealth.isLoading ? (
@@ -146,7 +146,8 @@ export function StatsDevices() {
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground text-xs">
-                          {device.sessions.toLocaleString()} sessions
+                          {device.sessions.toLocaleString()}{' '}
+                          {t('common:labels.sessions').toLowerCase()}
                         </span>
                         <span
                           className={cn(
@@ -173,7 +174,7 @@ export function StatsDevices() {
             ) : (
               <div className="rounded-xl border border-dashed p-8 text-center">
                 <Monitor className="text-muted-foreground/50 mx-auto h-12 w-12" />
-                <p className="text-muted-foreground mt-2">No device data available</p>
+                <p className="text-muted-foreground mt-2">{t('common:empty.noDeviceData')}</p>
               </div>
             )}
           </CardContent>
@@ -182,8 +183,8 @@ export function StatsDevices() {
         {/* Transcode Hotspots */}
         <Card>
           <CardHeader>
-            <CardTitle>Transcode Hotspots</CardTitle>
-            <CardDescription>Combinations causing the most transcodes</CardDescription>
+            <CardTitle>{t('devices.transcodeHotspots')}</CardTitle>
+            <CardDescription>{t('devices.transcodeHotspotsDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {hotspots.isLoading ? (
@@ -196,9 +197,9 @@ export function StatsDevices() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Device + Codec</TableHead>
-                    <TableHead className="text-right">Transcodes</TableHead>
-                    <TableHead className="text-right">% of Total</TableHead>
+                    <TableHead>{t('devices.deviceAndCodec')}</TableHead>
+                    <TableHead className="text-right">{t('devices.transcodes')}</TableHead>
+                    <TableHead className="text-right">{t('devices.pctOfTotal')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -231,7 +232,7 @@ export function StatsDevices() {
             ) : (
               <div className="rounded-xl border border-dashed p-8 text-center">
                 <CheckCircle2 className="mx-auto h-12 w-12 text-green-500/50" />
-                <p className="text-muted-foreground mt-2">No transcode hotspots</p>
+                <p className="text-muted-foreground mt-2">{t('devices.noTranscodeHotspots')}</p>
               </div>
             )}
           </CardContent>
@@ -241,10 +242,8 @@ export function StatsDevices() {
       {/* Matrix View */}
       <Card>
         <CardHeader>
-          <CardTitle>Compatibility Matrix</CardTitle>
-          <CardDescription>
-            Direct play rates by device and video codec. Sorted by session volume.
-          </CardDescription>
+          <CardTitle>{t('devices.compatibilityMatrix')}</CardTitle>
+          <CardDescription>{t('devices.compatibilityMatrixDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           {matrix.isLoading ? (
@@ -257,7 +256,9 @@ export function StatsDevices() {
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="bg-background sticky left-0 z-10">Device</TableHead>
+                  <TableHead className="bg-background sticky left-0 z-10">
+                    {t('common:labels.device')}
+                  </TableHead>
                   {activeCodecs.map((codec) => (
                     <TableHead key={codec} className="min-w-[80px] text-center">
                       {formatMediaTech(codec)}
@@ -276,7 +277,8 @@ export function StatsDevices() {
                       <TableCell className="bg-background sticky left-0 z-10 font-medium">
                         <div>{device.device}</div>
                         <div className="text-muted-foreground text-xs">
-                          {totalSessions.toLocaleString()} sessions
+                          {totalSessions.toLocaleString()}{' '}
+                          {t('common:labels.sessions').toLowerCase()}
                         </div>
                       </TableCell>
                       {activeCodecs.map((codec) => {
@@ -308,30 +310,30 @@ export function StatsDevices() {
           ) : (
             <div className="rounded-xl border border-dashed p-8 text-center">
               <Monitor className="text-muted-foreground/50 mx-auto h-12 w-12" />
-              <p className="text-muted-foreground mt-2">No device data in this period</p>
+              <p className="text-muted-foreground mt-2">{t('devices.noDeviceDataPeriod')}</p>
             </div>
           )}
 
           {/* Legend */}
           <div className="mt-4 flex items-center gap-4 text-sm">
-            <span className="text-muted-foreground">Legend:</span>
+            <span className="text-muted-foreground">{t('devices.legend')}</span>
             <Badge
               variant="outline"
               className="border-transparent bg-green-500/20 text-green-600 dark:text-green-400"
             >
-              &ge;80% Direct
+              {t('devices.directPlayHigh')}
             </Badge>
             <Badge
               variant="outline"
               className="border-transparent bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
             >
-              50-79%
+              {t('devices.directPlayMid')}
             </Badge>
             <Badge
               variant="outline"
               className="border-transparent bg-red-500/20 text-red-600 dark:text-red-400"
             >
-              &lt;50%
+              {t('devices.directPlayLow')}
             </Badge>
           </div>
         </CardContent>
@@ -340,8 +342,8 @@ export function StatsDevices() {
       {/* Top Transcoding Users */}
       <Card>
         <CardHeader>
-          <CardTitle>Top Transcoding Users</CardTitle>
-          <CardDescription>Users causing the most transcodes on your server</CardDescription>
+          <CardTitle>{t('devices.topTranscodingUsers')}</CardTitle>
+          <CardDescription>{t('devices.topTranscodingUsersDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           {topTranscodingUsers.isLoading ? (
@@ -354,11 +356,11 @@ export function StatsDevices() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead className="text-right">Sessions</TableHead>
-                  <TableHead className="text-right">Direct Play</TableHead>
-                  <TableHead className="text-right">Transcodes</TableHead>
-                  <TableHead className="text-right">% of Total</TableHead>
+                  <TableHead>{t('common:labels.user')}</TableHead>
+                  <TableHead className="text-right">{t('common:labels.sessions')}</TableHead>
+                  <TableHead className="text-right">{t('common:playback.directPlay')}</TableHead>
+                  <TableHead className="text-right">{t('devices.transcodes')}</TableHead>
+                  <TableHead className="text-right">{t('devices.pctOfTotal')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -417,7 +419,7 @@ export function StatsDevices() {
           ) : (
             <div className="rounded-xl border border-dashed p-8 text-center">
               <Users className="text-muted-foreground/50 mx-auto h-12 w-12" />
-              <p className="text-muted-foreground mt-2">No transcoding users found</p>
+              <p className="text-muted-foreground mt-2">{t('devices.noTranscodingUsers')}</p>
             </div>
           )}
         </CardContent>

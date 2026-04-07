@@ -19,6 +19,21 @@ export function getCountryName(code: string | null | undefined): string | null {
 }
 
 /**
+ * Compact location string: "City, Region" → "City, Country" → Country → null.
+ * Suitable for table cells, card footers, and other space-constrained displays.
+ */
+export function formatLocationCompact(
+  city: string | null | undefined,
+  region: string | null | undefined,
+  country: string | null | undefined,
+): string | null {
+  const countryName = getCountryName(country);
+  if (city && region) return `${city}, ${region}`;
+  if (city && countryName) return `${city}, ${countryName}`;
+  return city ?? countryName ?? null;
+}
+
+/**
  * Media display fields interface for formatting media titles
  */
 interface MediaDisplayFields {

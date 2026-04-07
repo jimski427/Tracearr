@@ -114,8 +114,8 @@ export interface ActiveAgent {
  * Event configuration for display in UI
  */
 export interface EventConfig {
-  name: string;
-  description: string;
+  nameKey: string;
+  descKey: string;
 }
 
 /**
@@ -132,33 +132,33 @@ export const NOTIFICATION_EVENT_ORDER: NotificationEventType[] = [
   'server_up',
 ];
 
-export const NOTIFICATION_EVENT_CONFIG: Partial<Record<NotificationEventType, EventConfig>> = {
+export const NOTIFICATION_EVENT_CONFIG = {
   violation_detected: {
-    name: 'Rule Violation',
-    description: 'A user triggered a rule violation',
+    nameKey: 'notifications:settings.violationDetected' as const,
+    descKey: 'notifications:settings.violationDetectedDesc' as const,
   },
   new_device: {
-    name: 'New Device',
-    description: 'A user logged in from a new device',
+    nameKey: 'notifications:settings.newDevice' as const,
+    descKey: 'notifications:settings.newDeviceDesc' as const,
   },
   trust_score_changed: {
-    name: 'Trust Score Changed',
-    description: "A user's trust score changed",
+    nameKey: 'notifications:settings.trustScoreChanged' as const,
+    descKey: 'notifications:settings.trustScoreChangedDesc' as const,
   },
   stream_started: {
-    name: 'Stream Started',
-    description: 'A user started watching content',
+    nameKey: 'notifications:settings.streamStarted' as const,
+    descKey: 'notifications:settings.streamStartedDesc' as const,
   },
   stream_stopped: {
-    name: 'Stream Stopped',
-    description: 'A user stopped watching content',
+    nameKey: 'notifications:settings.streamStopped' as const,
+    descKey: 'notifications:settings.streamStoppedDesc' as const,
   },
   server_down: {
-    name: 'Server Offline',
-    description: 'A media server became unreachable',
+    nameKey: 'notifications:settings.serverDown' as const,
+    descKey: 'notifications:settings.serverDownDesc' as const,
   },
   server_up: {
-    name: 'Server Online',
-    description: 'A media server came back online',
+    nameKey: 'notifications:settings.serverUp' as const,
+    descKey: 'notifications:settings.serverUpDesc' as const,
   },
-};
+} satisfies Partial<Record<NotificationEventType, EventConfig>>;

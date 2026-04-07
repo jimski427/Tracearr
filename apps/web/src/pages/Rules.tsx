@@ -572,7 +572,7 @@ function RuleCard({
   onSelect?: () => void;
   filterOptions?: RulesFilterOptions;
 }) {
-  const { t } = useTranslation('pages');
+  const { t } = useTranslation(['pages', 'common']);
   const ruleTypes = useRuleTypes();
   const ruleType = ruleTypes.find((rt) => rt.value === rule.type);
   const speedUnit = getSpeedUnit(unitSystem);
@@ -610,7 +610,9 @@ function RuleCard({
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold">{rule.name}</h3>
                 {!rule.isActive && (
-                  <span className="text-muted-foreground text-xs">({t('rules.disable')}d)</span>
+                  <span className="text-muted-foreground text-xs">
+                    ({t('common:states.disabled')})
+                  </span>
                 )}
               </div>
               {isV2 && rule.description && (
@@ -902,11 +904,11 @@ export function Rules() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={openTemplatePicker}>
               <Settings2 className="mr-2 h-4 w-4" />
-              Classic Rule
+              {t('rules.classicRule')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={openV2CreateDialog}>
               <Sparkles className="mr-2 h-4 w-4" />
-              Custom Rule
+              {t('rules.customRule')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -971,11 +973,11 @@ export function Rules() {
               <DropdownMenuContent>
                 <DropdownMenuItem onClick={openTemplatePicker}>
                   <Settings2 className="mr-2 h-4 w-4" />
-                  Classic Rule
+                  {t('rules.classicRule')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={openV2CreateDialog}>
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Custom Rule
+                  {t('rules.customRule')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1044,10 +1046,8 @@ export function Rules() {
       <Dialog open={isTemplatePicker} onOpenChange={setIsTemplatePicker}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Choose a Rule Template</DialogTitle>
-            <DialogDescription>
-              Select a pre-configured rule type to get started quickly.
-            </DialogDescription>
+            <DialogTitle>{t('rules.chooseTemplate')}</DialogTitle>
+            <DialogDescription>{t('rules.chooseTemplateDesc')}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-2">
             {CLASSIC_RULE_TEMPLATES.map((template) => (

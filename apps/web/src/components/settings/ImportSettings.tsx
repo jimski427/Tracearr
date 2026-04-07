@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -71,42 +72,40 @@ function TautulliImportSection({
   handleStartTautulliImport,
   tautulliProgressData,
 }: TautulliImportSectionProps) {
+  const { t } = useTranslation(['settings', 'common']);
+
   return (
     <div className="space-y-6">
       {/* Connection Setup */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-sm font-medium">
           <span className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-xs">
-            1
+            {t('import.step1')}
           </span>
-          Connect to Tautulli
+          {t('import.connectToTautulli')}
         </div>
 
         <div className="ml-8 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="tautulliUrl">Tautulli URL</Label>
+            <Label htmlFor="tautulliUrl">{t('import.tautulliUrl')}</Label>
             <Input
               id="tautulliUrl"
-              placeholder="http://localhost:8181"
+              placeholder={t('import.tautulliUrlPlaceholder')}
               value={tautulliUrl}
               onChange={(e) => setTautulliUrl(e.target.value)}
             />
-            <p className="text-muted-foreground text-xs">
-              The URL where Tautulli is accessible (include port if needed)
-            </p>
+            <p className="text-muted-foreground text-xs">{t('import.tautulliUrlHelp')}</p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tautulliApiKey">API Key</Label>
+            <Label htmlFor="tautulliApiKey">{t('common:labels.apiKey')}</Label>
             <PasswordInput
               id="tautulliApiKey"
-              placeholder="Your Tautulli API key"
+              placeholder={t('import.apiKeyPlaceholder')}
               value={tautulliApiKey}
               onChange={(e) => setTautulliApiKey(e.target.value)}
             />
-            <p className="text-muted-foreground text-xs">
-              Find this in Tautulli Settings → Web Interface → API Key
-            </p>
+            <p className="text-muted-foreground text-xs">{t('import.apiKeyHelp')}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -118,15 +117,15 @@ function TautulliImportSection({
               {connectionStatus === 'testing' ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Testing...
+                  {t('import.testing')}
                 </>
               ) : connectionStatus === 'success' ? (
                 <>
                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Connected
+                  {t('common:states.connected')}
                 </>
               ) : (
-                'Test Connection'
+                t('servers.testConnection')
               )}
             </Button>
 
@@ -150,17 +149,17 @@ function TautulliImportSection({
           <div className="space-y-4 border-t pt-6">
             <div className="flex items-center gap-2 text-sm font-medium">
               <span className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-xs">
-                2
+                {t('import.step2')}
               </span>
-              Import History
+              {t('import.importHistory')}
             </div>
 
             <div className="ml-8 space-y-4">
               <div className="space-y-2">
-                <Label>Target Server</Label>
+                <Label>{t('import.targetServer')}</Label>
                 <Select value={selectedPlexServerId} onValueChange={setSelectedPlexServerId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a Plex server" />
+                    <SelectValue placeholder={t('import.selectPlexServer')} />
                   </SelectTrigger>
                   <SelectContent>
                     {plexServers.map((server) => (
@@ -189,11 +188,10 @@ function TautulliImportSection({
                     htmlFor="overwriteFriendlyNames"
                     className="cursor-pointer text-sm font-normal"
                   >
-                    Overwrite existing friendly names with Tautulli names
+                    {t('import.overwriteFriendlyNames')}
                   </Label>
                   <p className="text-muted-foreground text-xs">
-                    By default, Tracearr keeps any custom names already set. Enable this to replace
-                    all existing names with the ones from Tautulli.
+                    {t('import.overwriteFriendlyNamesHelp')}
                   </p>
                 </div>
               </div>
@@ -212,15 +210,13 @@ function TautulliImportSection({
                     htmlFor="includeStreamDetails"
                     className="flex cursor-pointer items-center gap-2 text-sm font-normal"
                   >
-                    Include detailed stream data (codecs, bitrate, resolution)
+                    {t('import.includeStreamDetails')}
                     <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-medium text-amber-500">
-                      BETA
+                      {t('common:beta')}
                     </span>
                   </Label>
                   <p className="text-muted-foreground text-xs">
-                    Fetches additional quality data for each session via separate API calls. This
-                    enables bandwidth and quality statistics but significantly increases import
-                    time.
+                    {t('import.includeStreamDetailsHelp')}
                   </p>
                 </div>
               </div>
@@ -233,12 +229,12 @@ function TautulliImportSection({
                 {isTautulliImporting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Importing...
+                    {t('import.importing')}
                   </>
                 ) : (
                   <>
                     <Download className="mr-2 h-4 w-4" />
-                    Start Import
+                    {t('import.startImport')}
                   </>
                 )}
               </Button>
@@ -254,31 +250,19 @@ function TautulliImportSection({
             <div className="bg-muted/50 flex gap-3 rounded-lg p-4">
               <Info className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
               <div className="text-muted-foreground space-y-2 text-sm">
-                <p className="text-foreground font-medium">How the import works</p>
-                <p>
-                  Tracearr fetches your watch history from Tautulli and matches each record to
-                  existing users in Tracearr by their Plex user ID.
-                </p>
+                <p className="text-foreground font-medium">{t('import.howItWorks')}</p>
+                <p>{t('import.howItWorksDesc')}</p>
               </div>
             </div>
 
             <div className="flex gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
               <div className="space-y-2 text-sm">
-                <p className="font-medium">Records may be skipped if:</p>
+                <p className="font-medium">{t('import.recordsMayBeSkipped')}</p>
                 <ul className="text-muted-foreground list-inside list-disc space-y-1">
-                  <li>
-                    <strong>User not found</strong> — The Plex user doesn&apos;t exist in Tracearr.
-                    Sync your server first to add all users.
-                  </li>
-                  <li>
-                    <strong>Duplicate session</strong> — The session was already imported
-                    previously.
-                  </li>
-                  <li>
-                    <strong>In-progress session</strong> — Active/incomplete sessions without a
-                    reference ID are skipped.
-                  </li>
+                  <li>{t('import.skipUserNotFoundPlex')}</li>
+                  <li>{t('import.skipDuplicate')}</li>
+                  <li>{t('import.skipInProgress')}</li>
                 </ul>
               </div>
             </div>
@@ -319,21 +303,23 @@ function JellystatImportSection({
   handleStartJellystatImport,
   jellystatProgressData,
 }: JellystatImportSectionProps) {
+  const { t } = useTranslation(['settings', 'common']);
+
   return (
     <div className="space-y-6">
       {/* Server Selection */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-sm font-medium">
           <span className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-xs">
-            1
+            {t('import.step1')}
           </span>
-          Select Target Server
+          {t('import.selectTargetServer')}
         </div>
 
         <div className="ml-8 space-y-2">
           <Select value={selectedJellyfinServerId} onValueChange={setSelectedJellyfinServerId}>
             <SelectTrigger>
-              <SelectValue placeholder="Select a Jellyfin or Emby server" />
+              <SelectValue placeholder={t('import.selectJellyfinServer')} />
             </SelectTrigger>
             <SelectContent>
               {jellyfinEmbyServers.map((server) => (
@@ -353,9 +339,9 @@ function JellystatImportSection({
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-sm font-medium">
           <span className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-xs">
-            2
+            {t('import.step2')}
           </span>
-          Upload Jellystat Backup
+          {t('import.uploadJellystatBackup')}
         </div>
 
         <div className="ml-8 space-y-4">
@@ -368,13 +354,9 @@ function JellystatImportSection({
           />
           <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3">
             <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-              Export an Activity Backup from Jellystat
+              {t('import.exportBackupHint')}
             </p>
-            <p className="text-muted-foreground mt-1 text-xs">
-              In Jellystat, go to Settings → Backup → select <strong>&quot;Activity&quot;</strong> →
-              Export. Full backups are not supported — only the Activity backup contains the
-              playback history needed for import.
-            </p>
+            <p className="text-muted-foreground mt-1 text-xs">{t('import.exportBackupHelp')}</p>
           </div>
         </div>
       </div>
@@ -385,7 +367,7 @@ function JellystatImportSection({
           <span className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-xs">
             3
           </span>
-          Import Options
+          {t('import.importOptions')}
         </div>
 
         <div className="ml-8 space-y-3">
@@ -400,12 +382,9 @@ function JellystatImportSection({
             />
             <div className="space-y-1">
               <Label htmlFor="enrichMedia" className="cursor-pointer text-sm font-normal">
-                Enrich with media metadata (recommended)
+                {t('import.enrichMetadata')}
               </Label>
-              <p className="text-muted-foreground text-xs">
-                Fetches season/episode numbers and artwork from your media server. Slower but
-                provides better data quality.
-              </p>
+              <p className="text-muted-foreground text-xs">{t('import.enrichMetadataHelp')}</p>
             </div>
           </div>
           <div className="flex items-start space-x-3">
@@ -419,11 +398,10 @@ function JellystatImportSection({
             />
             <div className="space-y-1">
               <Label htmlFor="updateStreamDetails" className="cursor-pointer text-sm font-normal">
-                Update existing records with stream details
+                {t('import.updateExistingRecords')}
               </Label>
               <p className="text-muted-foreground text-xs">
-                Updates previously imported sessions with codec, bitrate, and transcode data from
-                the backup. Use when re-importing to backfill new stream fields.
+                {t('import.updateExistingRecordsHelp')}
               </p>
             </div>
           </div>
@@ -440,12 +418,12 @@ function JellystatImportSection({
           {isJellystatImporting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Importing...
+              {t('import.importing')}
             </>
           ) : (
             <>
               <Upload className="mr-2 h-4 w-4" />
-              Start Import
+              {t('import.startImport')}
             </>
           )}
         </Button>
@@ -462,31 +440,20 @@ function JellystatImportSection({
         <div className="bg-muted/50 flex gap-3 rounded-lg p-4">
           <Info className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
           <div className="text-muted-foreground space-y-2 text-sm">
-            <p className="text-foreground font-medium">How the import works</p>
-            <p>
-              Tracearr parses the Jellystat Activity backup and matches each record to existing
-              users in Tracearr by their Jellyfin/Emby user ID.
-            </p>
+            <p className="text-foreground font-medium">{t('import.howItWorks')}</p>
+            <p>{t('import.howItWorksDesc')}</p>
           </div>
         </div>
 
         <div className="flex gap-3 rounded-lg border border-yellow-500/20 bg-yellow-500/5 p-4">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
           <div className="space-y-2 text-sm">
-            <p className="font-medium">Records may be skipped if:</p>
+            <p className="font-medium">{t('import.recordsMayBeSkipped')}</p>
             <ul className="text-muted-foreground list-inside list-disc space-y-1">
-              <li>
-                <strong>User not found</strong> — The Jellyfin/Emby user doesn&apos;t exist in
-                Tracearr. Sync your server first to add all users.
-              </li>
-              <li>
-                <strong>Duplicate session</strong> — The session was already imported previously.
-              </li>
+              <li>{t('import.skipUserNotFoundJellyfin')}</li>
+              <li>{t('import.skipDuplicate')}</li>
             </ul>
-            <p className="text-muted-foreground pt-1">
-              If many records are skipped, ensure you&apos;ve synced your server recently in
-              Settings → Servers.
-            </p>
+            <p className="text-muted-foreground pt-1">{t('import.skipSyncHint')}</p>
           </div>
         </div>
       </div>
@@ -495,6 +462,7 @@ function JellystatImportSection({
 }
 
 export function ImportSettings() {
+  const { t } = useTranslation(['settings', 'common']);
   const { data: settings, isLoading: settingsLoading } = useSettings();
   const { data: serversData, isLoading: serversLoading } = useServers();
   const updateSettings = useUpdateSettings();
@@ -573,8 +541,8 @@ export function ImportSettings() {
               totalPages: 0,
               message:
                 progressPercent > 0
-                  ? `Import in progress (${progressPercent}% complete)...`
-                  : 'Import in progress...',
+                  ? t('import.importInProgressPercent', { percent: progressPercent })
+                  : t('import.importInProgressGeneric'),
             });
             setConnectionStatus('success');
             break;
@@ -613,8 +581,8 @@ export function ImportSettings() {
               enrichedRecords: 0,
               message:
                 progressPercent > 0
-                  ? `Import in progress (${progressPercent}% complete)...`
-                  : 'Import in progress...',
+                  ? t('import.importInProgressPercent', { percent: progressPercent })
+                  : t('import.importInProgressGeneric'),
             });
             break;
           }
@@ -674,19 +642,22 @@ export function ImportSettings() {
   const handleTestConnection = async () => {
     if (!tautulliUrl || !tautulliApiKey) {
       setConnectionStatus('error');
-      setConnectionMessage('Please enter Tautulli URL and API key');
+      setConnectionMessage(t('import.pleaseEnterDetails'));
       return;
     }
 
     setConnectionStatus('testing');
-    setConnectionMessage('Testing connection...');
+    setConnectionMessage(t('import.testingConnection'));
 
     try {
       const result = await api.import.tautulli.test(tautulliUrl, tautulliApiKey);
       if (result.success) {
         setConnectionStatus('success');
         setConnectionMessage(
-          `Connected! Found ${result.users ?? 0} users and ${(result.historyRecords ?? 0).toLocaleString()} history records.`
+          t('import.connectedFound', {
+            users: result.users ?? 0,
+            records: (result.historyRecords ?? 0).toLocaleString(),
+          })
         );
         handleSaveSettings();
       } else {
@@ -717,7 +688,7 @@ export function ImportSettings() {
       errorRecords: 0,
       currentPage: 0,
       totalPages: 0,
-      message: 'Starting import...',
+      message: t('import.startingImport'),
     });
 
     try {
@@ -762,7 +733,7 @@ export function ImportSettings() {
         errorRecords: 0,
         filteredRecords: 0,
         enrichedRecords: 0,
-        message: 'Please select a JSON file',
+        message: t('import.pleaseSelectJsonFile'),
       });
       return;
     }
@@ -785,7 +756,7 @@ export function ImportSettings() {
       errorRecords: 0,
       filteredRecords: 0,
       enrichedRecords: 0,
-      message: 'Uploading backup file...',
+      message: t('import.uploadingBackup'),
     });
 
     try {
@@ -876,21 +847,19 @@ export function ImportSettings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
-            Import History
+            {t('import.importHistory')}
           </CardTitle>
-          <CardDescription>Import historical watch data from external sources</CardDescription>
+          <CardDescription>{t('import.importHistoryDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8">
             <ServerIcon className="text-muted-foreground h-8 w-8" />
             <div className="text-center">
-              <p className="font-medium">No Servers Connected</p>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Add a media server first to import historical watch data.
-              </p>
+              <p className="font-medium">{t('import.noServers')}</p>
+              <p className="text-muted-foreground mt-1 text-sm">{t('import.noServersHint')}</p>
             </div>
             <Button variant="outline" asChild>
-              <a href="/settings/servers">Add Server</a>
+              <a href="/settings/servers">{t('servers.addServer')}</a>
             </Button>
           </div>
         </CardContent>
@@ -903,11 +872,9 @@ export function ImportSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Download className="h-5 w-5" />
-          Import History
+          {t('import.importHistory')}
         </CardTitle>
-        <CardDescription>
-          Import historical watch data from external sources like Tautulli or Jellystat
-        </CardDescription>
+        <CardDescription>{t('import.importHistoryDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         {hasBothServerTypes ? (
@@ -915,11 +882,11 @@ export function ImportSettings() {
             <TabsList className="mb-6 grid w-full grid-cols-2">
               <TabsTrigger value="plex" className="flex items-center gap-2">
                 <MediaServerIcon type="plex" className="h-4 w-4" />
-                Plex (Tautulli)
+                {t('import.plex')}
               </TabsTrigger>
               <TabsTrigger value="jellyfin" className="flex items-center gap-2">
                 <MediaServerIcon type="jellyfin" className="h-4 w-4" />
-                Jellyfin/Emby (Jellystat)
+                {t('import.jellyfinEmby')}
               </TabsTrigger>
             </TabsList>
 

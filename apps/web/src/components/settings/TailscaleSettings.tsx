@@ -53,7 +53,7 @@ function TailscaleLogo({ className }: { className?: string }) {
 }
 
 export function TailscaleSettings() {
-  const { t } = useTranslation('settings');
+  const { t } = useTranslation(['settings', 'common']);
   const { data: status, isLoading } = useTailscaleStatus();
   const queryClient = useQueryClient();
   const enableMutation = useEnableTailscale();
@@ -170,7 +170,7 @@ export function TailscaleSettings() {
                   onClick={() => setShowResetConfirm(true)}
                   disabled={resetMutation.isPending}
                 >
-                  {t('tailscale.reset')}
+                  {t('common:actions.reset')}
                 </Button>
               </div>
             </div>
@@ -188,7 +188,7 @@ export function TailscaleSettings() {
                 onClick={() => disableMutation.mutate()}
                 disabled={disableMutation.isPending}
               >
-                {t('tailscale.cancel')}
+                {t('common:actions.cancel')}
               </Button>
             </div>
           )}
@@ -212,7 +212,7 @@ export function TailscaleSettings() {
                   onClick={() => disableMutation.mutate()}
                   disabled={disableMutation.isPending}
                 >
-                  {t('tailscale.cancel')}
+                  {t('common:actions.cancel')}
                 </Button>
               </div>
             </div>
@@ -332,7 +332,7 @@ export function TailscaleSettings() {
                   disabled={enableMutation.isPending}
                 >
                   {enableMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t('tailscale.retry')}
+                  {t('common:actions.retry')}
                 </Button>
                 <Button variant="destructive" onClick={() => setShowDisableConfirm(true)}>
                   {t('tailscale.disable')}
@@ -383,7 +383,7 @@ export function TailscaleSettings() {
         onOpenChange={setShowResetConfirm}
         title={t('tailscale.resetConfirmTitle')}
         description={t('tailscale.resetConfirmDescription')}
-        confirmLabel={t('tailscale.reset')}
+        confirmLabel={t('common:actions.reset')}
         onConfirm={() => {
           resetMutation.mutate();
           setShowResetConfirm(false);

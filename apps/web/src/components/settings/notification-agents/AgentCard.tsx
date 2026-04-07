@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pencil, X, FlaskConical, Loader2, Check } from 'lucide-react';
 import type { NotificationChannelRouting, NotificationEventType } from '@tracearr/shared';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -32,6 +33,7 @@ export function AgentCard({
   onTest,
   isTesting,
 }: AgentCardProps) {
+  const { t } = useTranslation(['settings', 'notifications', 'pages', 'common']);
   const { config, displayValue, isConfigured } = agent;
   const Icon = config.icon;
 
@@ -104,7 +106,7 @@ export function AgentCard({
     return (
       <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-500">
         <Check className="h-3 w-3" />
-        <span>Saved</span>
+        <span>{t('notifications.agentCard.saved')}</span>
       </span>
     );
   };
@@ -130,7 +132,7 @@ export function AgentCard({
                 <h3 className="font-semibold">{config.name}</h3>
                 {config.isDefault && (
                   <Badge variant="secondary" className="text-xs">
-                    Default
+                    {t('notifications.agentCard.default')}
                   </Badge>
                 )}
               </div>
@@ -151,7 +153,7 @@ export function AgentCard({
                     <Pencil className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Edit</TooltipContent>
+                <TooltipContent>{t('common:actions.edit')}</TooltipContent>
               </Tooltip>
             )}
             {config.isRemovable && (
@@ -166,7 +168,7 @@ export function AgentCard({
                     <X className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Remove</TooltipContent>
+                <TooltipContent>{t('common:actions.remove')}</TooltipContent>
               </Tooltip>
             )}
           </div>
@@ -177,11 +179,18 @@ export function AgentCard({
         {/* Event checkboxes */}
         <div className="space-y-2">
           <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-            Events
+            {t('notifications.agentCard.events')}
           </p>
           <div className="grid grid-cols-1 gap-2">
             {NOTIFICATION_EVENT_ORDER.map((eventType) => {
-              const eventConfig = NOTIFICATION_EVENT_CONFIG[eventType];
+              const eventConfig = (
+                NOTIFICATION_EVENT_CONFIG as Partial<
+                  Record<
+                    string,
+                    (typeof NOTIFICATION_EVENT_CONFIG)[keyof typeof NOTIFICATION_EVENT_CONFIG]
+                  >
+                >
+              )[eventType];
               if (!eventConfig) return null;
 
               const isEnabled = getEventEnabled(eventType);
@@ -195,7 +204,7 @@ export function AgentCard({
                       disabled={!isConfigured}
                     />
                     <span className={!isConfigured ? 'text-muted-foreground' : ''}>
-                      {eventConfig.name}
+                      {t(eventConfig.nameKey)}
                     </span>
                   </label>
                   {getStatusIndicator(eventType)}
@@ -218,12 +227,12 @@ export function AgentCard({
               {isTesting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Testing...
+                  {t('pages:settings.notifications.testingAgent')}
                 </>
               ) : (
                 <>
                   <FlaskConical className="mr-2 h-4 w-4" />
-                  Send Test
+                  {t('notifications.agentCard.sendTest')}
                 </>
               )}
             </Button>
@@ -234,9 +243,9 @@ export function AgentCard({
         {!isConfigured && (
           <div className="mt-auto">
             <p className="text-muted-foreground text-center text-sm">
-              Not fully configured.{' '}
+              {t('notifications.agentCard.notConfigured')}{' '}
               <button onClick={onEdit} className="text-primary hover:underline">
-                Edit settings
+                {t('notifications.agentCard.editSettings')}
               </button>
             </p>
           </div>

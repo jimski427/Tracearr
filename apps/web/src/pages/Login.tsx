@@ -456,7 +456,7 @@ export function Login() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>
-            {needsSetup ? t('settings:account.createAccount') : t('settings:account.signIn')}
+            {needsSetup ? t('settings:account.createAccount') : t('common:actions.signIn')}
           </CardTitle>
           <CardDescription>
             {needsSetup
@@ -659,7 +659,7 @@ export function Login() {
                             ) : (
                               <KeyRound className="mr-2 h-4 w-4" />
                             )}
-                            {t('settings:account.signIn')}
+                            {t('common:actions.signIn')}
                           </Button>
                         </form>
                       )}

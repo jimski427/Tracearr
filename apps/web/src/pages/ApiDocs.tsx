@@ -5,6 +5,7 @@
  */
 
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { BASE_PATH } from '@/lib/basePath';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { useApiKey } from '@/hooks/queries/useSettings';
 const API_BASE = import.meta.env.VITE_API_URL || BASE_PATH;
 
 export function ApiDocs() {
+  const { t } = useTranslation('pages');
   const { data: apiKeyData, isLoading } = useApiKey();
   const token = apiKeyData?.token;
 
@@ -35,15 +37,15 @@ export function ApiDocs() {
         <Link to="/settings">
           <Button variant="ghost" size="sm" className="gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Back to Settings
+            {t('apiDocs.backToSettings')}
           </Button>
         </Link>
-        {token && <span className="text-muted-foreground ml-4 text-sm">API key auto-loaded</span>}
-        {!token && (
-          <span className="ml-4 text-sm text-yellow-500">
-            No API key generated - create one in Settings to test endpoints
+        {token && (
+          <span className="text-muted-foreground ml-4 text-sm">
+            {t('apiDocs.apiKeyAutoLoaded')}
           </span>
         )}
+        {!token && <span className="ml-4 text-sm text-yellow-500">{t('apiDocs.noApiKey')}</span>}
       </div>
       <SwaggerUI
         url={`${API_BASE}/api/v1/public/docs`}

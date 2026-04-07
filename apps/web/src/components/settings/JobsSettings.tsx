@@ -103,14 +103,14 @@ const JOB_ICONS: Record<string, typeof Database> = {
   repair_corrupted_chunks: Wrench,
 };
 
-const CATEGORY_CONFIG: Record<JobCategory, { icon: typeof Database; label: string }> = {
-  normalization: { icon: CaseSensitive, label: 'Normalization' },
-  backfill: { icon: History, label: 'Backfill' },
-  cleanup: { icon: HardDrive, label: 'Cleanup' },
-};
+const CATEGORY_CONFIG = {
+  normalization: { icon: CaseSensitive, labelKey: 'jobs.normalization' as const },
+  backfill: { icon: History, labelKey: 'jobs.backfill' as const },
+  cleanup: { icon: HardDrive, labelKey: 'jobs.cleanup' as const },
+} satisfies Record<JobCategory, { icon: typeof Database; labelKey: string }>;
 
 export function JobsSettings() {
-  const { t } = useTranslation(['notifications', 'pages', 'common']);
+  const { t } = useTranslation(['settings', 'notifications', 'pages', 'common']);
   const [jobs, setJobs] = useState<JobDefinition[]>([]);
   const [isLoadingJobs, setIsLoadingJobs] = useState(true);
   const [history, setHistory] = useState<JobHistoryItem[]>([]);
@@ -149,7 +149,7 @@ export function JobsSettings() {
         setJobs(result.jobs);
       } catch (err) {
         console.error('Failed to fetch jobs:', err);
-        toast.error(t('toast.error.jobLoadFailed'));
+        toast.error(t('notifications:toast.error.jobLoadFailed'));
       } finally {
         setIsLoadingJobs(false);
       }
@@ -221,14 +221,14 @@ export function JobsSettings() {
       setRunningJob(data.status === 'running' || data.status === 'waiting' ? data.type : null);
 
       if (data.status === 'complete') {
-        toast.success(t('toast.success.jobCompleted.title'), {
+        toast.success(t('notifications:toast.success.jobCompleted.title'), {
           description: data.message,
         });
         void fetchHistory();
         void fetchQueueStats();
         setRunningJob(null);
       } else if (data.status === 'error') {
-        toast.warning(t('toast.warning.jobFailed.title'), {
+        toast.warning(t('notifications:toast.warning.jobFailed.title'), {
           description: data.message,
         });
         void fetchQueueStats();
@@ -264,9 +264,9 @@ export function JobsSettings() {
       setRunningJob(null);
       setProgress(null);
       if (err instanceof Error && err.message.includes('already in progress')) {
-        toast.error(t('toast.error.jobAlreadyRunning'));
+        toast.error(t('notifications:toast.error.jobAlreadyRunning'));
       } else {
-        toast.error(t('toast.error.jobStartFailed'), {
+        toast.error(t('notifications:toast.error.jobStartFailed'), {
           description: err instanceof Error ? err.message : undefined,
         });
       }
@@ -309,21 +309,21 @@ export function JobsSettings() {
                     <span className="bg-primary relative inline-flex h-2 w-2 rounded-full" />
                   </span>
                   <span className="font-medium">{queueStats.active}</span>
-                  <span className="text-muted-foreground">running</span>
+                  <span className="text-muted-foreground">{t('jobs.running')}</span>
                 </span>
               )}
               {queueStats.waiting > 0 && (
                 <span className="flex items-center gap-1.5">
                   <ListTodo className="text-muted-foreground h-3.5 w-3.5" />
                   <span className="font-medium">{queueStats.waiting}</span>
-                  <span className="text-muted-foreground">queued</span>
+                  <span className="text-muted-foreground">{t('jobs.queued')}</span>
                 </span>
               )}
               {queueStats.delayed > 0 && (
                 <span className="flex items-center gap-1.5">
                   <Clock className="text-muted-foreground h-3.5 w-3.5" />
                   <span className="font-medium">{queueStats.delayed}</span>
-                  <span className="text-muted-foreground">delayed</span>
+                  <span className="text-muted-foreground">{t('jobs.delayed')}</span>
                 </span>
               )}
             </div>
@@ -335,11 +335,9 @@ export function JobsSettings() {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">
             <Wrench className="h-5 w-5" />
-            Maintenance Jobs
+            {t('jobs.title')}
           </CardTitle>
-          <CardDescription>
-            Run maintenance tasks to update historical data or optimize the database
-          </CardDescription>
+          <CardDescription>{t('jobs.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Tabs
@@ -355,7 +353,7 @@ export function JobsSettings() {
                 return (
                   <TabsTrigger key={category} value={category} className="gap-1.5">
                     <CategoryIcon className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">{config.label}</span>
+                    <span className="hidden sm:inline">{t(config.labelKey)}</span>
                     <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
                       {jobCount}
                     </Badge>
@@ -407,18 +405,18 @@ export function JobsSettings() {
                       progress?.status === 'waiting' ? (
                         <>
                           <Clock className="mr-1.5 h-3.5 w-3.5 animate-pulse" />
-                          Waiting
+                          {t('jobs.waiting')}
                         </>
                       ) : (
                         <>
                           <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                          Running
+                          {t('jobs.runningState')}
                         </>
                       )
                     ) : (
                       <>
                         <Play className="mr-1.5 h-3.5 w-3.5" />
-                        Run Job
+                        {t('jobs.runJob')}
                       </>
                     )}
                   </Button>
@@ -437,14 +435,14 @@ export function JobsSettings() {
                         <span className="text-foreground font-medium">
                           {progress.processedRecords.toLocaleString()}
                         </span>{' '}
-                        / {progress.totalRecords.toLocaleString()} processed
+                        / {progress.totalRecords.toLocaleString()} {t('jobs.processed')}
                       </span>
                       {progress.updatedRecords > 0 && (
                         <span className="text-muted-foreground">
                           <span className="font-medium text-green-600">
                             {progress.updatedRecords.toLocaleString()}
                           </span>{' '}
-                          updated
+                          {t('jobs.updated')}
                         </span>
                       )}
                       {progress.skippedRecords > 0 && (
@@ -452,7 +450,7 @@ export function JobsSettings() {
                           <span className="font-medium">
                             {progress.skippedRecords.toLocaleString()}
                           </span>{' '}
-                          unchanged
+                          {t('jobs.unchanged')}
                         </span>
                       )}
                       {progress.errorRecords > 0 && (
@@ -460,7 +458,7 @@ export function JobsSettings() {
                           <span className="font-medium">
                             {progress.errorRecords.toLocaleString()}
                           </span>{' '}
-                          errors
+                          {t('jobs.errors')}
                         </span>
                       )}
                     </div>
@@ -485,9 +483,7 @@ export function JobsSettings() {
             <div className="flex items-start gap-3 rounded-lg border border-green-500/20 bg-green-500/5 p-3">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-green-600">
-                  Last job completed successfully
-                </p>
+                <p className="text-sm font-medium text-green-600">{t('jobs.lastJobCompleted')}</p>
                 <p className="text-muted-foreground text-xs break-words">{progress.message}</p>
               </div>
               <Button
@@ -496,7 +492,7 @@ export function JobsSettings() {
                 className="h-7 shrink-0 px-2"
                 onClick={() => setProgress(null)}
               >
-                Dismiss
+                {t('common:actions.dismiss')}
               </Button>
             </div>
           )}
@@ -505,7 +501,7 @@ export function JobsSettings() {
             <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/5 p-3">
               <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-red-600">Last job failed</p>
+                <p className="text-sm font-medium text-red-600">{t('jobs.lastJobFailed')}</p>
                 <p className="text-muted-foreground text-xs break-words">{progress.message}</p>
               </div>
               <Button
@@ -514,7 +510,7 @@ export function JobsSettings() {
                 className="h-7 shrink-0 px-2"
                 onClick={() => setProgress(null)}
               >
-                Dismiss
+                {t('common:actions.dismiss')}
               </Button>
             </div>
           )}
@@ -528,9 +524,9 @@ export function JobsSettings() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Job History
+                {t('jobs.jobHistory')}
               </CardTitle>
-              <CardDescription>Recent maintenance job executions</CardDescription>
+              <CardDescription>{t('jobs.jobHistoryDesc')}</CardDescription>
             </div>
             <Button
               variant="ghost"
@@ -543,7 +539,7 @@ export function JobsSettings() {
               className="text-muted-foreground hover:text-foreground gap-1.5"
             >
               <RefreshCw className={cn('h-3.5 w-3.5', isLoadingHistory && 'animate-spin')} />
-              Refresh
+              {t('common:actions.refresh')}
             </Button>
           </div>
         </CardHeader>
@@ -595,18 +591,18 @@ export function JobsSettings() {
                           variant={isSuccess ? 'secondary' : 'destructive'}
                           className="text-[10px]"
                         >
-                          {isSuccess ? 'Completed' : 'Failed'}
+                          {isSuccess ? t('common:states.success') : t('common:states.failed')}
                         </Badge>
                       </div>
                       {item.result && (
                         <p className="text-muted-foreground mt-0.5 truncate text-xs">
-                          {item.result.processed.toLocaleString()} processed
+                          {item.result.processed.toLocaleString()} {t('jobs.processed')}
                           {item.result.updated > 0 &&
-                            ` · ${item.result.updated.toLocaleString()} updated`}
+                            ` · ${item.result.updated.toLocaleString()} ${t('jobs.updated')}`}
                           {item.result.errors > 0 && (
                             <span className="text-destructive">
                               {' '}
-                              · {item.result.errors.toLocaleString()} errors
+                              · {item.result.errors.toLocaleString()} {t('jobs.errors')}
                             </span>
                           )}
                         </p>
@@ -635,7 +631,7 @@ export function JobsSettings() {
       <Dialog open={!!confirmJob} onOpenChange={() => setConfirmJob(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Run {confirmJob?.name}?</DialogTitle>
+            <DialogTitle>{t('jobs.runConfirm', { name: confirmJob?.name })}</DialogTitle>
             <DialogDescription className="text-sm">{confirmJob?.description}</DialogDescription>
           </DialogHeader>
 
@@ -668,20 +664,17 @@ export function JobsSettings() {
           <div className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <div className="text-sm">
-              <p className="font-medium text-amber-600">This may take a while</p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                The job will process all historical sessions. Progress is shown in real-time and you
-                can safely navigate away.
-              </p>
+              <p className="font-medium text-amber-600">{t('jobs.mayTakeAWhile')}</p>
+              <p className="text-muted-foreground mt-1 text-xs">{t('jobs.mayTakeAWhileDesc')}</p>
             </div>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setConfirmJob(null)}>
-              Cancel
+              {t('common:actions.cancel')}
             </Button>
             <Button onClick={() => confirmJob && handleStartJob(confirmJob.type, jobOptions)}>
               <Play className="mr-1.5 h-3.5 w-3.5" />
-              Start Job
+              {t('jobs.startJob')}
             </Button>
           </DialogFooter>
         </DialogContent>

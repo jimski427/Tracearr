@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,6 +19,7 @@ import { useSettings, useServers } from '@/hooks/queries';
 import type { Server } from '@tracearr/shared';
 
 export function AccessSettings() {
+  const { t } = useTranslation(['settings', 'common']);
   const { data: settings, isLoading: settingsLoading } = useSettings();
   const { data: serversData, isLoading: serversLoading } = useServers();
   const { user } = useAuth();
@@ -53,16 +55,16 @@ export function AccessSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Shield className="h-5 w-5" />
-          Access Control
+          {t('accessControl.title')}
         </CardTitle>
-        <CardDescription>Configure who can access Tracearr</CardDescription>
+        <CardDescription>{t('accessControl.description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <FieldGroup>
           <AutosaveSwitchField
             id="allowGuestAccess"
-            label="Allow Guest Access"
-            description="When disabled, only the server owner can log in to Tracearr"
+            label={t('accessControl.allowGuestAccess')}
+            description={t('accessControl.allowGuestAccessDesc')}
             checked={false}
             onChange={() => undefined}
             disabled
@@ -75,7 +77,9 @@ export function AccessSettings() {
           {showAuthMethodSelector && (
             <Field>
               <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="primaryAuthMethod">Primary Authentication Method</FieldLabel>
+                <FieldLabel htmlFor="primaryAuthMethod">
+                  {t('accessControl.primaryAuthMethod')}
+                </FieldLabel>
                 <SaveStatusIndicator status={primaryAuthMethodField.status} />
               </div>
               <Select
@@ -95,20 +99,18 @@ export function AccessSettings() {
                   <SelectItem value="local">
                     <div className="flex items-center gap-2">
                       <KeyRound className="h-4 w-4" />
-                      <span>Local Account</span>
+                      <span>{t('general.localAccount')}</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="jellyfin">
                     <div className="flex items-center gap-2">
                       <MediaServerIcon type="jellyfin" className="h-4 w-4" />
-                      <span>Jellyfin Admin</span>
+                      <span>{t('accessControl.jellyfinAdmin')}</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <FieldDescription>
-                Choose which authentication method is shown by default on the login page
-              </FieldDescription>
+              <FieldDescription>{t('accessControl.primaryAuthMethodDesc')}</FieldDescription>
               {primaryAuthMethodField.status === 'error' && primaryAuthMethodField.errorMessage && (
                 <div className="flex items-center justify-between">
                   <FieldError>{primaryAuthMethodField.errorMessage}</FieldError>
@@ -120,7 +122,7 @@ export function AccessSettings() {
                       onClick={primaryAuthMethodField.retry}
                       className="h-6 px-2 text-xs"
                     >
-                      Retry
+                      {t('common:actions.retry')}
                     </Button>
                     <Button
                       type="button"
@@ -129,7 +131,7 @@ export function AccessSettings() {
                       onClick={primaryAuthMethodField.reset}
                       className="h-6 px-2 text-xs"
                     >
-                      Reset
+                      {t('common:actions.reset')}
                     </Button>
                   </div>
                 </div>

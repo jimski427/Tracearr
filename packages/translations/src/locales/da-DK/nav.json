@@ -1,0 +1,22 @@
+{
+  "dashboard": "Instrumentbræt",
+  "map": "Kort",
+  "history": "Historik",
+  "stats": "Statistik",
+  "activity": "Aktivitet",
+  "library": "Bibliotek",
+  "users": "Brugere",
+  "rules": "Regler",
+  "violations": "Overtrædelser",
+  "alerts": "Advarsler",
+  "settings": "Indstillinger",
+  "overview": "Oversigt",
+  "quality": "Kvalitet",
+  "storage": "Lagerplads",
+  "watch": "Se",
+  "performance": "Ydeevne",
+  "devices": "Enheder",
+  "bandwidth": "Båndbredde",
+  "jobs": "Jobs",
+  "accessControl": "Adgangskontrol"
+}

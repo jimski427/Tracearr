@@ -3,6 +3,7 @@
  * Components are organized in components/settings/ for maintainability.
  */
 import { NavLink, Routes, Route } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 // Settings section components
@@ -19,16 +20,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Bell } from 'lucide-react';
 
 function SettingsNav() {
+  const { t } = useTranslation('settings');
+
   const links = [
-    { href: '/settings', label: 'General', end: true },
-    { href: '/settings/servers', label: 'Servers' },
-    { href: '/settings/notifications', label: 'Notifications' },
-    { href: '/settings/access', label: 'Access Control' },
-    { href: '/settings/mobile', label: 'Mobile' },
-    { href: '/settings/tailscale', label: 'Tailscale' },
-    { href: '/settings/import', label: 'Import' },
-    { href: '/settings/jobs', label: 'Jobs' },
-    { href: '/settings/backup', label: 'Backup' },
+    { href: '/settings', label: t('tabs.general'), end: true },
+    { href: '/settings/servers', label: t('tabs.servers') },
+    { href: '/settings/notifications', label: t('tabs.notifications') },
+    { href: '/settings/access', label: t('tabs.accessControl') },
+    { href: '/settings/mobile', label: t('tabs.mobile') },
+    { href: '/settings/tailscale', label: t('tabs.tailscale') },
+    { href: '/settings/import', label: t('tabs.import') },
+    { href: '/settings/jobs', label: t('tabs.jobs') },
+    { href: '/settings/backup', label: t('tabs.backup') },
   ];
 
   return (
@@ -53,16 +56,16 @@ function SettingsNav() {
 }
 
 function NotificationSettings() {
+  const { t } = useTranslation('pages');
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" />
-          Notification Agents
+          {t('settings.notifications.title')}
         </CardTitle>
-        <CardDescription>
-          Configure notification channels and select which events each agent should receive.
-        </CardDescription>
+        <CardDescription>{t('settings.notifications.description')}</CardDescription>
       </CardHeader>
       <CardContent>
         <NotificationAgentsManager />
@@ -72,9 +75,11 @@ function NotificationSettings() {
 }
 
 export function Settings() {
+  const { t } = useTranslation('settings');
+
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Settings</h1>
+      <h1 className="text-3xl font-bold">{t('title')}</h1>
       <SettingsNav />
       <Routes>
         <Route index element={<GeneralSettings />} />

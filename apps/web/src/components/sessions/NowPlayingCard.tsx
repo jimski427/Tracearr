@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { cn, getCountryName, getMediaDisplay } from '@/lib/utils';
+import { cn, formatLocationCompact, getMediaDisplay } from '@/lib/utils';
 import { imageProxyUrl } from '@/lib/api';
 import { formatDuration } from '@/lib/formatters';
 import { useEstimatedProgress } from '@/hooks/useEstimatedProgress';
@@ -283,9 +283,7 @@ export function NowPlayingCard({
             </>
           )}
           <span className="truncate">
-            {session.geoCity && session.geoCountry
-              ? `${session.geoCity}, ${getCountryName(session.geoCountry)}`
-              : (getCountryName(session.geoCountry) ?? 'Unknown location')}
+            {formatLocationCompact(session.geoCity, session.geoRegion, session.geoCountry) ?? 'Unknown location'}
           </span>
         </span>
         <span className="flex-shrink-0">{session.quality ?? 'Unknown quality'}</span>

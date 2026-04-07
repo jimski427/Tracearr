@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import type { UserDevice } from '@tracearr/shared';
+import { formatLocationCompact } from '@/lib/utils';
 
 interface UserDevicesCardProps {
   devices: UserDevice[];
@@ -113,13 +114,7 @@ function formatLocationShort(loc: {
   region: string | null;
   country: string | null;
 }): string {
-  if (loc.city && loc.region) {
-    return `${loc.city}, ${loc.region}`;
-  }
-  if (loc.city && loc.country) {
-    return `${loc.city}, ${loc.country}`;
-  }
-  return loc.city ?? loc.country ?? 'Unknown';
+  return formatLocationCompact(loc.city, loc.region, loc.country) ?? 'Unknown';
 }
 
 export function UserDevicesCard({ devices, isLoading, totalSessions = 0 }: UserDevicesCardProps) {
@@ -232,7 +227,7 @@ export function UserDevicesCard({ devices, isLoading, totalSessions = 0 }: UserD
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <span className="flex cursor-help items-center gap-1 text-yellow-500">
-                                  <MapPin className="h-3 w-3" />
+                                  <MapPin className="h-3 w-3 shrink-0" />
                                   {locations.length} locations
                                 </span>
                               </TooltipTrigger>
@@ -254,7 +249,7 @@ export function UserDevicesCard({ devices, isLoading, totalSessions = 0 }: UserD
                             </Tooltip>
                           ) : (
                             <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
+                              <MapPin className="h-3 w-3 shrink-0" />
                               {formatLocationShort(primaryLocation)}
                             </span>
                           )}

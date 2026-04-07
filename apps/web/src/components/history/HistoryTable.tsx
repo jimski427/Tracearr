@@ -36,7 +36,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn, getCountryName, getMediaDisplay } from '@/lib/utils';
+import { cn, formatLocationCompact, getCountryName, getMediaDisplay } from '@/lib/utils';
 import { formatDuration } from '@/lib/formatters';
 import { getAvatarUrl } from '@/components/users/utils';
 import type { SessionWithDetails, SessionState, MediaType, EngagementTier } from '@tracearr/shared';
@@ -335,9 +335,9 @@ export const HistoryTableRow = memo(
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-1.5">
-                      <Globe className="text-muted-foreground h-3.5 w-3.5" />
+                      <Globe className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       <span className="truncate text-sm">
-                        {session.geoCity || getCountryName(session.geoCountry)}
+                        {formatLocationCompact(session.geoCity, session.geoRegion, session.geoCountry)}
                       </span>
                     </div>
                   </TooltipTrigger>
