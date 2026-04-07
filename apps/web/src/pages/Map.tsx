@@ -62,6 +62,8 @@ export function Map() {
     [timeRange, filters]
   );
 
+  const filterKey = useMemo(() => JSON.stringify(apiParams), [apiParams]);
+
   // Fetch data - includes available filter options based on current filters
   const { data: locationData, isLoading: locationsLoading } = useLocationStats(apiParams);
 
@@ -226,7 +228,12 @@ export function Map() {
 
       {/* Map */}
       <div className="relative flex-1">
-        <StreamMap locations={locations} isLoading={locationsLoading} viewMode={filters.viewMode} />
+        <StreamMap
+          locations={locations}
+          isLoading={locationsLoading}
+          viewMode={filters.viewMode}
+          filterKey={filterKey}
+        />
       </div>
     </div>
   );

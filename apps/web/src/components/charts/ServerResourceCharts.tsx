@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
+import { HighchartsReact } from 'highcharts-react-official';
 import type { ServerResourceDataPoint } from '@tracearr/shared';
 import { ChartSkeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

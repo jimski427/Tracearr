@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -137,7 +137,6 @@ interface StreamCardProps {
   serverColorMap?: Map<string, string | null>;
 }
 
-// Component to fit bounds when data changes
 function MapBoundsUpdater({
   sessions,
   locations,
@@ -146,6 +145,24 @@ function MapBoundsUpdater({
   locations?: LocationStats[];
 }) {
   const map = useMap();
+  const prevBoundsKeyRef = useRef<string>('');
+  const userInteractedRef = useRef(false);
+  const isProgrammaticRef = useRef(false);
+
+  const handleUserInteraction = useCallback(() => {
+    if (!isProgrammaticRef.current) {
+      userInteractedRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    map.on('zoomstart', handleUserInteraction);
+    map.on('dragstart', handleUserInteraction);
+    return () => {
+      map.off('zoomstart', handleUserInteraction);
+      map.off('dragstart', handleUserInteraction);
+    };
+  }, [map, handleUserInteraction]);
 
   useEffect(() => {
     const points: [number, number][] = [];
@@ -162,9 +179,23 @@ function MapBoundsUpdater({
       }
     });
 
-    if (points.length > 0) {
+    if (points.length === 0) return;
+
+    const boundsKey = points
+      .map(([lat, lon]) => `${lat.toFixed(4)},${lon.toFixed(4)}`)
+      .sort()
+      .join('|');
+
+    if (boundsKey === prevBoundsKeyRef.current) return;
+
+    const isInitialLoad = prevBoundsKeyRef.current === '';
+    prevBoundsKeyRef.current = boundsKey;
+
+    if (isInitialLoad || !userInteractedRef.current) {
       const bounds = L.latLngBounds(points);
+      isProgrammaticRef.current = true;
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 10 });
+      isProgrammaticRef.current = false;
     }
   }, [sessions, locations, map]);
 
@@ -311,7 +342,11 @@ export function StreamCard({
                       <>
                         <MapPin className="h-3 w-3 flex-shrink-0" />
                         <span className="truncate">
-                          {formatLocationCompact(session.geoCity, session.geoRegion, session.geoCountry)}
+                          {formatLocationCompact(
+                            session.geoCity,
+                            session.geoRegion,
+                            session.geoCountry
+                          )}
                         </span>
                       </>
                     )}

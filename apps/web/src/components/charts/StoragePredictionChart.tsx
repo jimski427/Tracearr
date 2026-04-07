@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import Highcharts from 'highcharts/highcharts-more';
-import HighchartsReact from 'highcharts-react-official';
+import { HighchartsReact } from 'highcharts-react-official';
 import type { LibraryStorageResponse } from '@tracearr/shared';
 import { ChartSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/library';

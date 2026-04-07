@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { Activity, Users, Gauge, Clock, HardDrive, ArrowDown, ArrowUp } from 'lucide-react';
 import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
+import { HighchartsReact } from 'highcharts-react-official';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { StatCard, formatWatchTime } from '@/components/ui/stat-card';
 import {
