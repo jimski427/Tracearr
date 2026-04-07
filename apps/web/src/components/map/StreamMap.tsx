@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, useMap, ZoomControl, CircleMarker, Popup } from 'react-leaflet';
 import { HeatmapLayer } from 'react-leaflet-heatmap-layer-v3';
 import L from 'leaflet';
@@ -96,6 +96,7 @@ interface StreamMapProps {
   className?: string;
   isLoading?: boolean;
   viewMode?: MapViewMode;
+  filterKey?: string;
 }
 
 // Heatmap configuration (gradient generated dynamically from accent color)
@@ -168,29 +169,64 @@ function CircleMarkersLayer({ locations, colors }: CircleMarkersLayerProps) {
   );
 }
 
-// Component to fit bounds when data changes
 function MapBoundsUpdater({
   locations,
   isLoading,
+  filterKey,
 }: {
   locations: LocationStats[];
   isLoading?: boolean;
+  filterKey?: string;
 }) {
   const map = useMap();
+  const prevBoundsKeyRef = useRef<string>('');
+  const userInteractedRef = useRef(false);
+  const isProgrammaticRef = useRef(false);
+
+  const handleUserInteraction = useCallback(() => {
+    if (!isProgrammaticRef.current) {
+      userInteractedRef.current = true;
+    }
+  }, []);
 
   useEffect(() => {
-    // Don't update bounds while loading - prevents zoom reset during filter changes
+    map.on('zoomstart', handleUserInteraction);
+    map.on('dragstart', handleUserInteraction);
+    return () => {
+      map.off('zoomstart', handleUserInteraction);
+      map.off('dragstart', handleUserInteraction);
+    };
+  }, [map, handleUserInteraction]);
+
+  useEffect(() => {
+    userInteractedRef.current = false;
+  }, [filterKey]);
+
+  useEffect(() => {
     if (isLoading) return;
 
     const points: [number, number][] = locations
       .filter((l) => l.lat && l.lon)
       .map((l) => [l.lat, l.lon]);
 
-    if (points.length > 0) {
+    if (points.length === 0) return;
+
+    const boundsKey = points
+      .map(([lat, lon]) => `${lat.toFixed(4)},${lon.toFixed(4)}`)
+      .sort()
+      .join('|');
+
+    if (boundsKey === prevBoundsKeyRef.current) return;
+
+    const isInitialLoad = prevBoundsKeyRef.current === '';
+    prevBoundsKeyRef.current = boundsKey;
+
+    if (isInitialLoad || !userInteractedRef.current) {
       const bounds = L.latLngBounds(points);
+      isProgrammaticRef.current = true;
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
+      isProgrammaticRef.current = false;
     }
-    // Note: Don't zoom out when no data - preserve current view during filter transitions
   }, [locations, map, isLoading]);
 
   return null;
@@ -207,6 +243,7 @@ export function StreamMap({
   className,
   isLoading,
   viewMode = 'heatmap',
+  filterKey,
 }: StreamMapProps) {
   const hasData = locations.length > 0;
   const { theme, accentHue } = useTheme();
@@ -239,7 +276,7 @@ export function StreamMap({
         />
         <ZoomControl position="bottomright" />
 
-        <MapBoundsUpdater locations={locations} isLoading={isLoading} />
+        <MapBoundsUpdater locations={locations} isLoading={isLoading} filterKey={filterKey} />
 
         {/* Visualization layer - heatmap or circles */}
         {hasData && viewMode === 'heatmap' && (
