@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Film, Tv, PieChart } from 'lucide-react';
 import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
+import { HighchartsReact } from 'highcharts-react-official';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartSkeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/library';

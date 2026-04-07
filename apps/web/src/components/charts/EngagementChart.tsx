@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import Highcharts from 'highcharts';
-import HighchartsReact from 'highcharts-react-official';
+import { HighchartsReact } from 'highcharts-react-official';
 import { ChartSkeleton } from '@/components/ui/skeleton';
 import type { EngagementTierBreakdown } from '@tracearr/shared';
 
