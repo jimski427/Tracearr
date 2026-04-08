@@ -6,7 +6,16 @@
  * English which uses 'en' as the base/fallback language.
  */
 
-import { i18n, loadLocale } from './config.js';
+import i18n from 'i18next';
+
+// Locale loader — set by config.ts (web) or config.mobile.ts (mobile) at import time
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+let _loadLocaleFn: (lang: string) => Promise<void> = async () => {};
+
+/** @internal */
+export function _registerLocaleLoader(fn: (lang: string) => Promise<void>): void {
+  _loadLocaleFn = fn;
+}
 
 // Storage key for persisted language preference
 const LANGUAGE_STORAGE_KEY = 'tracearr_language';
@@ -241,7 +250,7 @@ export async function changeLanguage(
     );
   }
 
-  await loadLocale(resolved);
+  await _loadLocaleFn(resolved);
   await i18n.changeLanguage(resolved);
   await setStoredLanguage(resolved, storage);
 }
