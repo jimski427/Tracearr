@@ -91,12 +91,16 @@ jobs:
           fi
 
           # Check if any mobile-relevant files changed since last deploy
-          CHANGES=$(git diff --name-only "$PREV_SHA" "$CURRENT_TAG" -- apps/mobile/ packages/shared/ packages/translations/ | wc -l)
+          CHANGES=$(git diff --name-only "$PREV_SHA" "$CURRENT_TAG" -- \
+            apps/mobile/ packages/shared/ packages/translations/ \
+            .easignore pnpm-lock.yaml | wc -l)
 
           if [ "$CHANGES" -gt 0 ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Mobile changes detected: $CHANGES files"
-            git diff --name-only "$PREV_SHA" "$CURRENT_TAG" -- apps/mobile/ packages/shared/ packages/translations/
+            git diff --name-only "$PREV_SHA" "$CURRENT_TAG" -- \
+              apps/mobile/ packages/shared/ packages/translations/ \
+              .easignore pnpm-lock.yaml
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No mobile changes since last deploy ($PREV_SHA)"
