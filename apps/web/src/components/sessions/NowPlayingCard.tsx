@@ -91,6 +91,7 @@ export function NowPlayingCard({
   const avatarUrl = getAvatarUrl(session.serverId, session.user.thumbUrl, 28) ?? undefined;
 
   const isPaused = session.state === 'paused';
+  const isSquareArt = session.mediaType === 'track' || session.mediaType === 'live';
 
   return (
     <div
@@ -119,7 +120,7 @@ export function NowPlayingCard({
             <img
               src={posterUrl}
               alt={title}
-              className="h-full w-full object-cover"
+              className={cn('h-full w-full', isSquareArt ? 'object-contain' : 'object-cover')}
               loading="lazy"
             />
           ) : (
@@ -258,7 +259,8 @@ export function NowPlayingCard({
             </>
           )}
           <span className="truncate">
-            {formatLocationCompact(session.geoCity, session.geoRegion, session.geoCountry) ?? 'Unknown location'}
+            {formatLocationCompact(session.geoCity, session.geoRegion, session.geoCountry) ??
+              'Unknown location'}
           </span>
         </span>
         <span className="flex-shrink-0">{session.quality ?? 'Unknown quality'}</span>
