@@ -753,6 +753,7 @@ export async function createSessionWithRulesAtomic(
             joinedAt: null,
             lastActivityAt: serverUser.lastActivityAt,
             createdAt: serverUser.createdAt,
+            removedAt: null,
             updatedAt: new Date(),
             identityName: serverUser.identityName,
           };
@@ -1288,8 +1289,17 @@ export async function processPollResults(input: PollResultsInput): Promise<void>
     for (const key of stoppedKeys) {
       const stoppedSession = findStoppedSession(key, cachedSessions);
       if (stoppedSession) {
+        // Fetch the computed durationMs from DB since the cached session has stale data
+        const [dbSession] = await db
+          .select({ durationMs: sessions.durationMs })
+          .from(sessions)
+          .where(eq(sessions.id, stoppedSession.id));
+        const durationMs = dbSession?.durationMs ?? stoppedSession.durationMs;
         await pubSubService.publish('session:stopped', stoppedSession.id);
-        await enqueueNotification({ type: 'session_stopped', payload: stoppedSession });
+        await enqueueNotification({
+          type: 'session_stopped',
+          payload: { ...stoppedSession, durationMs },
+        });
       }
     }
   }
@@ -1405,6 +1415,7 @@ export async function reEvaluateRulesOnTranscodeChange(
     joinedAt: null,
     lastActivityAt: serverUser.lastActivityAt,
     createdAt: serverUser.createdAt,
+    removedAt: null,
     updatedAt: new Date(),
     identityName: serverUser.identityName,
   };
@@ -1625,6 +1636,7 @@ export async function reEvaluateRulesOnPauseState(
     joinedAt: null,
     lastActivityAt: serverUser.lastActivityAt,
     createdAt: serverUser.createdAt,
+    removedAt: null,
     updatedAt: new Date(),
     identityName: serverUser.identityName,
   };

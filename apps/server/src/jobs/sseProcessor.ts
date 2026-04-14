@@ -1505,7 +1505,7 @@ async function confirmPendingSessionAndPersist(
 async function stopSession(existingSession: typeof sessions.$inferSelect): Promise<void> {
   const cachedSession = await cacheService?.getSessionById(existingSession.id);
 
-  const { wasUpdated, needsRetry, retryData } = await stopSessionAtomic({
+  const { wasUpdated, durationMs, needsRetry, retryData } = await stopSessionAtomic({
     session: existingSession,
     stoppedAt: new Date(),
   });
@@ -1527,7 +1527,10 @@ async function stopSession(existingSession: typeof sessions.$inferSelect): Promi
   if (pubSubService) {
     await pubSubService.publish('session:stopped', existingSession.id);
     if (cachedSession) {
-      await enqueueNotification({ type: 'session_stopped', payload: cachedSession });
+      await enqueueNotification({
+        type: 'session_stopped',
+        payload: { ...cachedSession, durationMs },
+      });
     }
   }
 
