@@ -14,6 +14,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import { sessions } from '../../db/schema.js';
 import { normalizeClient, normalizePlatformName } from '../../utils/platformNormalizer.js';
+import { scrubStringFields } from '../../utils/sanitizeText.js';
 
 // Default chunk sizes
 const DEFAULT_INSERT_CHUNK_SIZE = 500;
@@ -97,8 +98,9 @@ export async function flushInsertBatch(
   const chunkSize = options.chunkSize ?? DEFAULT_INSERT_CHUNK_SIZE;
   let insertedCount = 0;
 
-  // Normalize all sessions before insert
-  const normalizedSessions = sessionsToInsert.map(normalizeSessionFields);
+  const normalizedSessions = sessionsToInsert.map((s) =>
+    scrubStringFields(normalizeSessionFields(s))
+  );
 
   for (let i = 0; i < normalizedSessions.length; i += chunkSize) {
     const chunk = normalizedSessions.slice(i, i + chunkSize);
