@@ -16,6 +16,7 @@ import { createMediaServerClient, type MediaLibraryItem } from './mediaServer/in
 import type { LibrarySyncProgress } from '@tracearr/shared';
 import { REDIS_KEYS } from '@tracearr/shared';
 import { getHeavyOpsStatus } from '../jobs/heavyOpsLock.js';
+import { scrubStringFields } from '../utils/sanitizeText.js';
 import type { Redis } from 'ioredis';
 
 // Constants for batching and rate limiting
@@ -751,7 +752,7 @@ export class LibrarySyncService {
               createdAt = new Date();
             }
 
-            return {
+            return scrubStringFields({
               serverId,
               libraryId,
               ratingKey: item.ratingKey,
@@ -775,7 +776,7 @@ export class LibrarySyncService {
               parentIndex: item.parentIndex ?? null,
               itemIndex: item.itemIndex ?? null,
               createdAt,
-            };
+            });
           })
         )
         .onConflictDoUpdate({
