@@ -265,6 +265,13 @@ export function StreamMap({
       <MapContainer
         center={[20, 0]}
         zoom={2}
+        minZoom={2}
+        maxBounds={[
+          [-85, -180],
+          [85, 180],
+        ]}
+        maxBoundsViscosity={1.0}
+        worldCopyJump={false}
         className="h-full w-full"
         scrollWheelZoom={true}
         zoomControl={false}
@@ -273,6 +280,7 @@ export function StreamMap({
           key={resolvedTheme}
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url={tileUrl}
+          noWrap={true}
         />
         <ZoomControl position="bottomright" />
 
