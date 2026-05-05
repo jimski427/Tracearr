@@ -1,0 +1,221 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard", ":maintainLockFilesWeekly"],
+  "timezone": "UTC",
+  "schedule": ["before 4am on the first day of the month"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "branchConcurrentLimit": 5,
+  "rebaseWhen": "behind-base-branch",
+  "semanticCommits": "disabled",
+  "commitMessagePrefix": "",
+  "commitMessageAction": "Update",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{newVersion}}",
+  "prTitle": "Update {{depName}} to {{newVersion}}",
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
+  "osvVulnerabilityAlerts": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 4am on monday"],
+    "commitMessageAction": "Refresh",
+    "commitMessageTopic": "pnpm lockfile"
+  },
+  "postUpdateOptions": ["pnpmDedupe"],
+  "packageRules": [
+    {
+      "matchPackageNames": ["@types/node"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false,
+      "description": "Pin @types/node major to match Node 22 runtime"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "react-router",
+        "react-router-dom",
+        "@types/react",
+        "@types/react-dom",
+        "@tanstack/react-query",
+        "@tanstack/react-query-devtools"
+      ],
+      "groupName": "React ecosystem",
+      "commitMessageTopic": "React ecosystem"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@radix-ui/*"],
+      "groupName": "Radix UI",
+      "commitMessageTopic": "Radix UI"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "tailwindcss",
+        "@tailwindcss/*",
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge",
+        "lucide-react"
+      ],
+      "groupName": "Tailwind and shadcn",
+      "commitMessageTopic": "Tailwind and shadcn"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["drizzle-orm", "drizzle-kit", "drizzle-zod"],
+      "groupName": "Drizzle",
+      "commitMessageTopic": "Drizzle"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["pg", "postgres", "@types/pg"],
+      "groupName": "Postgres clients",
+      "commitMessageTopic": "Postgres clients"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["fastify", "@fastify/*"],
+      "groupName": "Fastify",
+      "commitMessageTopic": "Fastify"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["vitest", "@vitest/*", "vite", "@vitejs/*"],
+      "groupName": "Vitest and Vite",
+      "commitMessageTopic": "Vitest and Vite"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["bullmq", "ioredis"],
+      "groupName": "BullMQ and Redis",
+      "commitMessageTopic": "BullMQ and Redis"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["socket.io", "socket.io-client", "@socket.io/*"],
+      "groupName": "Socket.io",
+      "commitMessageTopic": "Socket.io"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["highcharts", "highcharts-react-official"],
+      "groupName": "Highcharts",
+      "commitMessageTopic": "Highcharts"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["leaflet", "react-leaflet", "@types/leaflet"],
+      "groupName": "Leaflet",
+      "commitMessageTopic": "Leaflet"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "expo",
+        "expo-*",
+        "@expo/*",
+        "react-native",
+        "react-native-*",
+        "@react-native/*",
+        "@react-native-*/*"
+      ],
+      "groupName": "Expo and React Native",
+      "commitMessageTopic": "Expo and React Native"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@playwright/*", "playwright", "playwright-core"],
+      "groupName": "Playwright",
+      "commitMessageTopic": "Playwright"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["zod"],
+      "groupName": "Zod"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["typescript", "tslib", "ts-node", "tsx"],
+      "groupName": "TypeScript tooling",
+      "commitMessageTopic": "TypeScript tooling"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "eslint",
+        "eslint-*",
+        "@eslint/*",
+        "@typescript-eslint/*",
+        "prettier",
+        "prettier-*"
+      ],
+      "groupName": "Lint and format",
+      "commitMessageTopic": "Lint and format"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@types/*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "type definitions",
+      "commitMessageTopic": "type definitions"
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@types/*"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "automerge": true
+    },
+    {
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchPackageNames": ["node"],
+      "allowedVersions": "/^(20|22|24|26|28|30)\\./",
+      "description": "Only even-numbered Node majors (LTS releases)"
+    },
+    {
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchPackageNames": ["postgres", "timescale/timescaledb", "timescale/timescaledb-ha"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false,
+      "description": "Pin Postgres and TimescaleDB majors manually"
+    },
+    {
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "groupName": "Docker base images",
+      "commitMessageTopic": "Docker base images"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "commitMessageTopic": "GitHub Actions",
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "automerge": true
+    },
+    {
+      "matchManagers": ["helm-values", "helmv3"],
+      "groupName": "Helm chart",
+      "commitMessageTopic": "Helm chart"
+    }
+  ]
+}
