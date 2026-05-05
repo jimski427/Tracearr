@@ -8,7 +8,7 @@
 import { eq, sql, and, isNull, gte } from 'drizzle-orm';
 import type { ExtractTablesWithRelations } from 'drizzle-orm';
 import type { PgTransaction } from 'drizzle-orm/pg-core';
-import type { PostgresJsQueryResultHKT } from 'drizzle-orm/postgres-js';
+import type { NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
 import type { Rule, ViolationSeverity, ViolationWithDetails, RuleType } from '@tracearr/shared';
 import { WS_EVENTS, TIME_MS } from '@tracearr/shared';
 import { db } from '../../db/client.js';
@@ -20,7 +20,7 @@ import { enqueueNotification } from '../notificationQueue.js';
 
 // Type for transaction context
 type TransactionContext = PgTransaction<
-  PostgresJsQueryResultHKT,
+  NodePgQueryResultHKT,
   typeof schema,
   ExtractTablesWithRelations<typeof schema>
 >;
