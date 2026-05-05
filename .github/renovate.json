@@ -12,7 +12,6 @@
   "commitMessageAction": "Update",
   "commitMessageTopic": "{{depName}}",
   "commitMessageExtra": "to {{newVersion}}",
-  "prTitle": "Update {{depName}} to {{newVersion}}",
   "vulnerabilityAlerts": {
     "enabled": true,
     "labels": ["security"]
