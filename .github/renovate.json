@@ -1,0 +1,451 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+
+  // best-practices includes recommended, action SHA pinning, npm cooldown, abandonment
+  // flags, docker digest pins, weekly lockfile maintenance, and dev-dep version pinning.
+  "extends": ["config:best-practices", "security:openssf-scorecard"],
+
+  // Lockfile already pins effective versions, so pinning in package.json is just noise.
+  "ignorePresets": [":pinDevDependencies"],
+
+  "timezone": "UTC",
+  "schedule": ["before 6am on monday"],
+
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "branchConcurrentLimit": 5,
+  "rebaseWhen": "behind-base-branch",
+
+  // CLAUDE.md: no commit prefixes, no emojis, no attribution.
+  "semanticCommits": "disabled",
+  "commitMessagePrefix": "",
+  "commitMessageAction": "Update",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{newVersion}}",
+
+  // One PR per major instead of jumping to latest.
+  "separateMultipleMajor": true,
+
+  // Split patch and minor inside groups. Patches automerge, minors hit the dashboard.
+  "separateMinorPatch": true,
+
+  "dependencyDashboardOSVVulnerabilitySummary": "unresolved",
+  "dependencyDashboardLabels": ["dependencies"],
+
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security", "priority"]
+  },
+  "osvVulnerabilityAlerts": true,
+
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"],
+    "commitMessageAction": "Refresh",
+    "commitMessageTopic": "pnpm lockfile"
+  },
+  "postUpdateOptions": ["pnpmDedupe"],
+
+  // Floor cooldown. Runtime deps bumped to 7d in a rule below.
+  "minimumReleaseAge": "3 days",
+
+  "packageRules": [
+    // ----- hard blocks -----
+
+    // Track the Node runtime. Dockerfiles are on 24; bump this when we move.
+    {
+      "matchPackageNames": ["@types/node"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false,
+      "description": "Pin @types/node major to match Node 24 runtime in Dockerfiles"
+    },
+
+    // Postgres/TimescaleDB majors require a schema migration.
+    {
+      "matchManagers": ["dockerfile", "docker-compose", "helm-values", "helmv3"],
+      "matchPackageNames": ["postgres", "timescale/timescaledb", "timescale/timescaledb-ha"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false,
+      "description": "Postgres and TimescaleDB majors require migration planning"
+    },
+
+    // Redis majors break config and protocol. BullMQ and the session store both
+    // talk to it directly, so review these by hand.
+    {
+      "matchManagers": ["dockerfile", "docker-compose", "helm-values", "helmv3"],
+      "matchPackageNames": ["redis", "valkey"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false,
+      "description": "Redis and Valkey majors need a config review"
+    },
+
+    // Odd Node majors aren't LTS.
+    {
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchPackageNames": ["node"],
+      "allowedVersions": "/^(20|22|24|26|28|30)\\./",
+      "description": "Even-numbered Node majors only"
+    },
+
+    // Lock to currently-supported macOS runners.
+    {
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["github-runner"],
+      "matchPackageNames": ["macos"],
+      "allowedVersions": "/^(14|15)$/"
+    },
+
+    // ----- supply-chain hardening -----
+
+    // 7d cooldown for runtime deps. 3d for dev tooling is fine; prod gets longer
+    // after the axios npm attack.
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["dependencies"],
+      "minimumReleaseAge": "7 days",
+      "description": "Longer cooldown for runtime deps after axios March 2026"
+    },
+
+    // ----- mobile workspace -----
+
+    // Expo SDK controls too many transitive pins to trust automerge here.
+    // Prefix branches so they're easy to find.
+    {
+      "matchFileNames": ["apps/mobile/**"],
+      "additionalBranchPrefix": "mobile-",
+      "labels": ["dep-mobile"],
+      "automerge": false
+    },
+
+    // RN-locked libs. expo-server-sdk lives in apps/server and isn't part of
+    // the mobile build, so it's excluded from the group.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "expo",
+        "expo-*",
+        "@expo/*",
+        "react-native",
+        "react-native-*",
+        "@react-native/*",
+        "@react-native-*/*",
+        "@react-navigation/*",
+        "@gorhom/bottom-sheet",
+        "@shopify/react-native-skia",
+        "nativewind",
+        "victory-native",
+        "lucide-react-native",
+        "!expo-server-sdk"
+      ],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Expo and React Native"
+    },
+
+    // Gate Expo SDK majors behind dashboard approval.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "expo",
+        "expo-*",
+        "@expo/*",
+        "react-native",
+        "react-native-*",
+        "@react-native/*",
+        "@react-native-*/*",
+        "@react-navigation/*",
+        "!expo-server-sdk"
+      ],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "labels": ["dep-mobile", "dep-major"]
+    },
+
+    // ----- ecosystem groups, minor + patch only -----
+    // Majors get one PR each. See #740 for why grouping eslint + typescript +
+    // plugins through a major is a bad idea.
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "react",
+        "react-dom",
+        "react-router",
+        "@types/react",
+        "@types/react-dom",
+        "@tanstack/react-query",
+        "@tanstack/react-table",
+        "@tanstack/react-virtual",
+        "react-day-picker",
+        "react-intersection-observer"
+      ],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "React ecosystem",
+      "labels": ["dep-react"]
+    },
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@radix-ui/*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Radix UI",
+      "labels": ["dep-ui"]
+    },
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "tailwindcss",
+        "@tailwindcss/*",
+        "class-variance-authority",
+        "clsx",
+        "tailwind-merge",
+        "tw-animate-css",
+        "lucide-react",
+        "sonner",
+        "cmdk",
+        "shadcn"
+      ],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Tailwind and shadcn",
+      "labels": ["dep-ui"]
+    },
+
+    // Hookform releases track zod runtime changes.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["react-hook-form", "@hookform/*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Forms"
+    },
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@dnd-kit/*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dnd-kit"
+    },
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["i18next", "i18next-*", "react-i18next"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "i18n"
+    },
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["drizzle-orm", "drizzle-kit", "drizzle-zod"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Drizzle"
+    },
+
+    // We use pg, not the postgres npm package.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["pg", "@types/pg"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Postgres clients"
+    },
+
+    // fastify-plugin tracks Fastify.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["fastify", "fastify-plugin", "@fastify/*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Fastify"
+    },
+
+    // Vitest and Vite share peer-deps; bumping one without the other breaks the runner.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "vitest",
+        "@vitest/*",
+        "vite",
+        "@vitejs/*",
+        "vite-plugin-node-polyfills"
+      ],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Vitest and Vite"
+    },
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["bullmq", "ioredis"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "BullMQ and Redis"
+    },
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["socket.io", "socket.io-client"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Socket.io"
+    },
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["highcharts", "highcharts-react-official"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Highcharts"
+    },
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "leaflet",
+        "react-leaflet",
+        "react-leaflet-heatmap-layer-v3",
+        "@types/leaflet"
+      ],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Leaflet"
+    },
+
+    // Only @playwright/test is installed.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@playwright/*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Playwright"
+    },
+
+    // zod-to-openapi reads zod internals; bump them together.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["zod", "@asteasolutions/zod-to-openapi"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Zod"
+    },
+
+    // typescript + tsx only. tslib and ts-node aren't installed.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["typescript", "tsx"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "TypeScript tooling"
+    },
+
+    // Unscoped typescript-eslint needs an exact-name entry. The @typescript-eslint/*
+    // glob doesn't catch it because * doesn't cross / in minimatch.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "eslint",
+        "eslint-*",
+        "@eslint/*",
+        "typescript-eslint",
+        "@typescript-eslint/*",
+        "prettier",
+        "prettier-*",
+        "husky",
+        "lint-staged"
+      ],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Lint and format"
+    },
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@types/*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "type definitions"
+    },
+
+    // ----- native modules: manual review on majors -----
+    // bcrypt and sharp have rebuild risk. Native crypto powers the mobile pair flow.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": [
+        "bcrypt",
+        "sharp",
+        "react-native-quick-crypto",
+        "react-native-nitro-modules"
+      ],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "description": "Native modules: rebuild risk, review by hand"
+    },
+
+    // Plex SSE listener. A major could break live session detection.
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["eventsource"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "description": "Plex SSE listener: reconnect semantics matter"
+    },
+
+    // ----- automerge -----
+
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+
+    {
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@types/*"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+
+    // Runtime patches only. Minors still need review.
+    {
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+
+    {
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "automerge": true
+    },
+
+    // ----- docker, compose, helm -----
+
+    // Bundle the Timescale image bump across Dockerfile, compose, and helm.
+    {
+      "matchManagers": ["dockerfile", "docker-compose", "helm-values", "helmv3"],
+      "matchPackageNames": ["postgres", "timescale/timescaledb", "timescale/timescaledb-ha"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Postgres and TimescaleDB images",
+      "labels": ["dep-docker", "dep-database"]
+    },
+
+    {
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "Docker base images",
+      "labels": ["dep-docker"]
+    },
+
+    // ----- github actions -----
+    // Action majors get reviewed by hand.
+    {
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "GitHub Actions",
+      "automerge": true,
+      "labels": ["dep-ci"]
+    },
+
+    // ----- helm chart -----
+    {
+      "matchManagers": ["helm-values", "helmv3"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Helm chart",
+      "labels": ["dep-deploy"]
+    },
+
+    // Assign and tag all majors.
+    {
+      "matchUpdateTypes": ["major"],
+      "assignees": ["connorgallopo"],
+      "labels": ["dep-major"]
+    }
+  ]
+}
